@@ -256,6 +256,13 @@ function DSP_WORKLET_MAIN() {
         let w; const wv = Math.round(P.elWave);
         if (wv === 0) w = saw(this.synPh, dt);
         else if (wv === 1) { let p2 = this.synPh + 0.5; if (p2 >= 1) p2 -= 1; w = saw(this.synPh, dt) - saw(p2, dt); }
+        else if (wv === 3) w = 1 - 4 * Math.abs(this.synPh - 0.5);
+        else if (wv === 4 && P.wt) { // 波表: 16 帧 × 3 级 mip × 2048 点, 帧间线性插值, 按音高选 mip 防混叠
+          const wt = P.wt, N = wt.size; const pos = Math.min(1, Math.max(0, P.elWtPos)) * (wt.n - 1); const fi = pos | 0, fr = pos - fi; const fj = fi + 1 < wt.n ? fi + 1 : fi;
+          const fh = f * Math.pow(2, P.elDetune / 12); const mip = fh < 330 ? 0 : fh < 1300 ? 1 : 2;
+          const b1 = (fi * 3 + mip) * N, b2 = (fj * 3 + mip) * N; const x = this.synPh * N; const xi = x | 0, xf = x - xi; const xj = xi + 1 < N ? xi + 1 : 0; const d = wt.data;
+          const a = d[b1 + xi] * (1 - xf) + d[b1 + xj] * xf, b = d[b2 + xi] * (1 - xf) + d[b2 + xj] * xf; w = a * (1 - fr) + b * fr;
+        }
         else w = Math.sin(TWO_PI * this.synPh);
         out += w * P.elSynth * ea * (0.3 + 0.7 * vel) * 0.45;
       }
@@ -294,7 +301,7 @@ function DSP_WORKLET_MAIN() {
         dzBreath: 1.4, dzJet: 0.32, dzNoise: 0.15, dzMembrane: 0.3,
         gnBreath: 0.5, gnReed: 0.5, gnNoise: 0.1, gnBell: 0.3,
         stDetune: 12, stPw: 0.2,
-        elBlend: 0, elDrive: 0.3, elBias: 0.2, elSynth: 0, elWave: 0, elDetune: 0, elSub: 0,
+        elBlend: 0, elDrive: 0.3, elBias: 0.2, elSynth: 0, elWave: 0, elWtPos: 0, elDetune: 0, elSub: 0, wt: null,
         vnOn: 0, vnAmt: 0.5, vnFold: 0.3, vnFm: 0.3, vnOoze: 0.3, voices: 8, warmth: 0, pure: 0,
       };
       this.voices = []; for (let i = 0; i < 8; i++) this.voices.push(new Voice());
@@ -303,7 +310,8 @@ function DSP_WORKLET_MAIN() {
     }
     onMsg(m) {
       switch (m.type) {
-        case 'params': Object.assign(this.P, m.P); break;
+        case 'params': { const wt = this.P.wt; Object.assign(this.P, m.P); this.P.wt = wt; break; }
+        case 'wavetable': this.P.wt = { n: m.n, size: m.size, data: m.data }; break;
         case 'noteOn': this.noteOn(m.note, m.vel === undefined ? 0.8 : m.vel); break;
         case 'noteOff': this.noteOff(m.note); break;
         case 'allOff': for (const v of this.voices) if (v.active) v.off(); this.noteStack.length = 0; break;

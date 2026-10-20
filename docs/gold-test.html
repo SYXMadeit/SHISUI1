@@ -1,0 +1,39 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>石髓 · 金色对比测试 Gold test</title>
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen&family=ZCOOL+QingKe+HuangYou&display=swap" rel="stylesheet">
+<style>
+body{margin:0;padding:24px;font-family:"ZCOOL QingKe HuangYou","Silkscreen",sans-serif;background:#e6e0d2;color:#2b2620}
+h1{font-size:22px;margin:0 0 4px}p{font-size:12px;color:#5e564a;margin:0 0 14px;font-family:sans-serif}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.cell{border-radius:12px;padding:8px;background:rgba(255,252,245,.7);border:1px solid rgba(184,134,11,.3)}
+.cell h3{font-size:13px;margin:0 0 6px;font-family:"Silkscreen",monospace;font-weight:400}
+canvas{display:block;width:100%;height:90px;border-radius:8px;border:1px solid rgba(184,134,11,.5);box-shadow:inset 0 0 18px rgba(0,0,0,.5)}
+.light canvas{box-shadow:none;border-color:rgba(120,100,60,.4)}
+</style></head><body>
+<h1>石髓 · 显示用金色 对比测试</h1>
+<p>目标：像 Serum 的蓝线在黑面板上一样清楚。上排：黑曜石面板底；下排：直接画在白大理石上。每格相同的波形，不同的金。最右是 Serum 蓝做参照。</p>
+<div class="grid" id="g"></div>
+<script>
+const GOLDS = {
+  '哑金 matte': { core: '#f6dc8e', body: '#d6a93a', glow: 'rgba(214,169,58,0.55)' },
+  '亮金 bright': { core: '#fff8d6', body: '#f2c44d', glow: 'rgba(255,214,110,0.85)' },
+  '熔金 molten': { core: '#ffefb3', body: '#ffa63a', glow: 'rgba(255,150,40,0.85)' },
+  'Serum 蓝 参照': { core: '#dff3ff', body: '#39a9ff', glow: 'rgba(57,169,255,0.9)' },
+  '旧版 平涂金 old flat': { flat: '#e8c15a' },
+  '拉丝金 brushed': { grad: ['#fff1b0', '#c9961e', '#fff6cc'] },
+  '玫瑰金 rose': { core: '#ffe4d6', body: '#e59a7a', glow: 'rgba(229,154,122,0.8)' },
+  '白金 platinum': { core: '#ffffff', body: '#d9d2c0', glow: 'rgba(255,250,230,0.8)' },
+};
+function wave(ctx, W, H) { ctx.beginPath(); for (let x = 0; x <= W; x++) { const t = x / W; const v = Math.sin(t * Math.PI * 4) * 0.55 + Math.sin(t * Math.PI * 12) * 0.25 + Math.sin(t * Math.PI * 28) * 0.1; const y = H / 2 - v * H * 0.4; if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); } }
+function neon(ctx, pal, w) { ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.globalAlpha = .7; ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.lineWidth = w + 2.6; ctx.stroke(); ctx.globalAlpha = 1; ctx.strokeStyle = pal.body; ctx.lineWidth = w; ctx.shadowColor = pal.glow; ctx.shadowBlur = w * 3; ctx.stroke(); ctx.shadowBlur = 0; ctx.strokeStyle = pal.core; ctx.lineWidth = Math.max(.8, w * .42); ctx.stroke(); }
+function draw(cv, pal, light) { const dpr = 2; const W = cv.clientWidth * dpr, H = cv.clientHeight * dpr; cv.width = W; cv.height = H; const ctx = cv.getContext('2d');
+  if (light) { const g = ctx.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#f7f3ea'); g.addColorStop(.5, '#e9e2d2'); g.addColorStop(1, '#f3eee2'); ctx.fillStyle = g; ctx.fillRect(0, 0, W, H); ctx.strokeStyle = 'rgba(150,140,120,.35)'; ctx.lineWidth = 2; for (let i = 0; i < 6; i++) { ctx.beginPath(); ctx.moveTo(Math.random() * W, 0); ctx.bezierCurveTo(Math.random() * W, H * .4, Math.random() * W, H * .6, Math.random() * W, H); ctx.stroke(); } }
+  else { ctx.fillStyle = 'rgba(22,19,14,0.92)'; ctx.fillRect(0, 0, W, H); }
+  ctx.strokeStyle = light ? 'rgba(80,60,20,.25)' : 'rgba(214,169,58,.28)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.stroke();
+  wave(ctx, W, H);
+  if (pal.flat) { ctx.strokeStyle = pal.flat; ctx.lineWidth = 1.6 * dpr; ctx.shadowColor = pal.flat; ctx.shadowBlur = 6; ctx.stroke(); ctx.shadowBlur = 0; }
+  else if (pal.grad) { const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, pal.grad[0]); g.addColorStop(.5, pal.grad[1]); g.addColorStop(1, pal.grad[2]); ctx.strokeStyle = g; ctx.lineWidth = 2.2 * dpr; ctx.stroke(); }
+  else neon(ctx, pal, 1.7 * dpr);
+  ctx.fillStyle = pal.core || pal.flat || '#fff'; ctx.font = (8 * dpr) + 'px Silkscreen, monospace'; ctx.fillText('440 Hz · 2 CYC', 6 * dpr, H - 5 * dpr); }
+const g = document.getElementById('g');
+for (const light of [false, true]) for (const k in GOLDS) { const c = document.createElement('div'); c.className = 'cell' + (light ? ' light' : ''); c.innerHTML = '<h3>' + k + (light ? ' · 白石底' : ' · 黑曜底') + '</h3>'; const cv = document.createElement('canvas'); c.appendChild(cv); g.appendChild(c); requestAnimationFrame(() => draw(cv, GOLDS[k], light)); }
+</script></body></html>
