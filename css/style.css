@@ -671,3 +671,5 @@ body.lite .panel, body.lite .topbar, body.lite .keys-wrap, body.lite .help-box, 
 /* 手机 / 弱机: 两团漂移的光晕 (blur 40px + screen 混合) 是最大的帧率杀手, 轻量模式直接不画; 金脉发光改静态 */
 body.lite .light-burst { display: none !important; }
 body.lite .veins-glow { animation: none !important; }
+
+@media (max-width: 760px) { body.guide-on .guide { min-height: 96px; align-content: flex-start; } }
