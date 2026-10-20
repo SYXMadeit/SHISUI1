@@ -1,10 +1,14 @@
 /* ============================================================
    石髓 SHISUI · 大理石 × 液态金属 主题
    ============================================================ */
+/* ---------- 自托管字体 (子集化, 全部 SIL OFL; 不依赖 Google Fonts, 国内与离线都能显示) ---------- */
+@font-face { font-family: "Silkscreen"; font-style: normal; font-weight: 400; font-display: swap; src: url("../fonts/silkscreen-400.woff2") format("woff2"); }
+@font-face { font-family: "Silkscreen"; font-style: normal; font-weight: 700; font-display: swap; src: url("../fonts/silkscreen-700.woff2") format("woff2"); }
+@font-face { font-family: "ZCOOL QingKe HuangYou"; font-style: normal; font-weight: 400; font-display: swap; src: url("../fonts/qingke-huangyou-subset.woff2") format("woff2"); }
+@font-face { font-family: "ZCOOL XiaoWei"; font-style: normal; font-weight: 400; font-display: swap; src: url("../fonts/xiaowei-subset.woff2") format("woff2"); }
 :root {
   --font-brush: "ZCOOL QingKe HuangYou", "Silkscreen", "PingFang SC", "Microsoft YaHei", sans-serif;
   --font-pixel: "Silkscreen", "ZCOOL QingKe HuangYou", Menlo, monospace;
-  --font-ink: "Ma Shan Zheng", "STKaiti", "KaiTi", "ZCOOL XiaoWei", serif;
   --marble-1: #f5f1e8; --marble-2: #e6e0d2; --marble-3: #cfc6b3;
   --gold-1: #fff3b0; --gold-2: #e8c15a; --gold-3: #b8860b; --gold-4: #7a5a08;
   --ink: #2b2620; --ink-2: #5e564a; --ink-3: #8b8273;
