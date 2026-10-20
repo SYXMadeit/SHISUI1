@@ -8,7 +8,7 @@
   const state = {
     patch: S.defaults(), mods: [], locks: new Set(), undo: [], redo: [], ab: { A: null, B: null, cur: 'A' }, mode: 'shape', armed: null,
     presetIdx: -1, octave: 0, xy: [0.5, 0.5], wheel: 0, key: 0.5, vel: 0.8, decayEnv: 0, sustain: false, sustained: new Set(),
-    slots: [], recTarget: 0, slotFx: false,
+    slots: [], recTarget: 0, slotFx: false, held: new Set(), gate: false, gateOn: null, gateOff: null, lastFreq: 0,
     lfo: [{ ph: 0, sh: Math.random() }, { ph: 0, sh: Math.random() }], effCache: {}, escAt: 0,
   };
   /* ---- 诊断记录: 最近错误 + 最近操作 (供"报错"上报) ---- */
@@ -22,7 +22,7 @@
   /* 仓库地址：在 github.io 上运行时从网址推断 (改用户名后自动跟随)，否则用默认值 */
   S.REPO = (() => { const m = /^([^.]+)\.github\.io$/.exec(location.hostname); if (m) { const seg = location.pathname.split('/').filter(Boolean)[0]; if (seg) return m[1] + '/' + seg; } return 'majmanx/SHISUI1'; })();
   const engine = new S.Engine(); const bus = new S.RandomBus();
-  let sched = null, controls = {}, modIndex = {}, keyboard, xyPad, scope, palette, codeConsole;
+  let sched = null, controls = {}, modIndex = {}, keyboard, xyPad, scope, palette, codeConsole; const liveViews = []; let instScope = null;
   let instBody, modListEl, orbEls = [], rndViewEl, geigerLed, geigerCv, c14StatsEl, srcChipEls = {}, patchTA, arpChip;
   const KEYMAP = { z: 0, s: 1, x: 2, d: 3, c: 4, v: 5, g: 6, b: 7, h: 8, n: 9, j: 10, m: 11, q: 12, 2: 13, w: 14, 3: 15, e: 16, r: 17, 5: 18, t: 19, 6: 20, y: 21, 7: 22, u: 23, i: 24, 9: 25, o: 26, 0: 27, p: 28, '[': 29, '=': 30, ']': 31 };
   const KEYHINT = {}; for (const k in KEYMAP) KEYHINT[KEYMAP[k]] = k.toUpperCase();
@@ -109,7 +109,7 @@
   function loop() {
     const now = performance.now(); const dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
     bus.tick(dt); state.decayEnv *= Math.exp(-dt * 7); modTick(dt); frame++;
-    if (scope && frame % 2 === 0) { scope.draw(document.body.classList.contains('venom')); drawVU(); }
+    if (scope && frame % 2 === 0) { const vn = document.body.classList.contains('venom'); scope.draw(vn); drawVU(); if (instScope && instScope.cv.offsetParent) instScope.draw(vn); for (const lv of liveViews) if (lv.view.cv.offsetParent) lv.view.draw(vn); }
     if (frame % 4 === 0) updateRandomViews();
     if (engine.recording && recTimeEl && frame % 3 === 0) { const t = engine.recordingTime; recTimeEl.textContent = String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(Math.floor(t % 60)).padStart(2, '0') + '.' + Math.floor((t % 1) * 10); }
     requestAnimationFrame(loop);
@@ -196,7 +196,7 @@
     main.appendChild(pe);
     /* --- 滤波 + 放大器 --- */
     const pa = UI.panel('p-amp', '放大链', 'FILTER · DIODE · TUBE · CAB', 2, 'col-7');
-    pa.body.appendChild(UI.group('滤波', [K('flt.type'), K('flt.res'), K('flt.lfoRate'), K('flt.lfoDepth')]));
+    pa.body.appendChild(UI.group('滤波', [K('flt.type'), K('flt.res'), K('flt.lfoRate'), K('flt.lfoDepth'), lfoViewEl(2, '滤波 LFO', () => ({ shape: 'sine', phase: ((engine.ctx.currentTime * real('flt.lfoRate')) % 1 + 1) % 1 }))]));
     pa.body.appendChild(UI.group('二极管', [K('dio.drive'), K('dio.asym'), K('dio.mix')]));
     pa.body.appendChild(UI.group('电子管', [K('tube.drive'), K('tube.bias'), K('tube.sag'), K('tube.xover'), K('tube.mix')]));
     pa.body.appendChild(UI.group('箱体 · 电', [K('cab.type'), K('cab.mix'), K('amp.in'), K('amp.out'), K('amp.hum'), K('amp.hiss')]));
@@ -209,7 +209,7 @@
     main.appendChild(pf);
     /* --- 调制矩阵 --- */
     const pmod = UI.panel('p-mod', '调制矩阵', 'MOD MATRIX · LFO', 3, 'col-8');
-    pmod.body.appendChild(UI.row([K('lfo1.rate'), K('lfo1.shape'), K('lfo2.rate'), K('lfo2.shape')]));
+    pmod.body.appendChild(UI.row([UI.group('LFO 1', [K('lfo1.rate'), K('lfo1.shape'), lfoViewEl(0, 'LFO 1', () => ({ shape: real('lfo1.shape'), phase: state.lfo[0].ph, sh: state.lfo[0].sh }))]), UI.group('LFO 2', [K('lfo2.rate'), K('lfo2.shape'), lfoViewEl(1, 'LFO 2', () => ({ shape: real('lfo2.shape'), phase: state.lfo[1].ph, sh: state.lfo[1].sh }))])]));
     const srcChips = UI.el('div', 'src-chips');
     for (const [sid, name] of S.MOD_SOURCES) { const ch = UI.el('div', 'chip', name); ch.dataset.src = sid; ch.title = '点我，再点任意旋钮 → 接线'; ch.addEventListener('click', () => arm(sid)); srcChips.appendChild(ch); }
     pmod.body.appendChild(srcChips); modListEl = UI.el('div', 'mod-list'); pmod.body.appendChild(modListEl); main.appendChild(pmod);
@@ -278,7 +278,7 @@
     });
   }
   function buildInstPanel() {
-    if (!instBody) return; instBody.innerHTML = '';
+    if (!instBody) return; instBody.innerHTML = ''; for (let i = liveViews.length - 1; i >= 0; i--) if (liveViews[i].key === 'env') liveViews.splice(i, 1);
     const tiles = UI.el('div', 'tiles');
     for (const [id, ico, name, en] of INST_TILES) { const t = UI.el('div', 'tile' + (real('inst') === id ? ' on' : ''), '<div class="t-ico">' + ico + '</div><div class="t-name">' + name + '</div><div class="t-en">' + en + '</div>'); t.addEventListener('click', () => { setParam('inst', id, { commit: true }); toast(name); }); t.addEventListener('mouseenter', () => info(S.PARAM_MAP.inst)); tiles.appendChild(t); }
     instBody.appendChild(tiles);
@@ -289,8 +289,21 @@
     instBody.appendChild(ar);
     if (state.acousticCard) { const c = UI.el('div', 'acoustic-card', state.acousticCard); instBody.appendChild(c); }
     const g = INST_GROUP[real('inst')]; const ids = S.PARAMS.filter((p) => p.group === g).map((p) => p.id);
+    const lw = UI.el('div', 'live-wave'); const lwc = document.createElement('canvas'); lw.appendChild(lwc); lw.title = '实时波形：乐器原始输出（滤波与放大之前），按当前音高同步触发，显示两个周期 · Live raw waveform, pitch-synced';
+    const lwRow = UI.el('div', 'live-row'); lwRow.appendChild(UI.el('div', 'grp-title', UI.bi('实时波形', 'Live wave'))); lwRow.appendChild(lw); instBody.appendChild(lwRow);
+    instScope = new UI.MiniScope(lwc, engine.anSynth, () => (state.gate || (engine.ctx.currentTime - (state.gateOff || 0)) < 2 ? state.lastFreq || 0 : 0));
     instBody.appendChild(UI.group(S.GROUPS[g], ids.map((id) => K(id)), 'lvl2-inline'));
-    instBody.appendChild(UI.row([UI.group('演奏', [K('mono'), K('glide'), K('spread'), K('voices')]), UI.group('揉弦 · 颤音', [K('vib.rate'), K('vib.depth'), K('vib.delay')]), UI.group('包络', [K('env.a'), K('env.d'), K('env.s'), K('env.r')])], 'lvl2-inline'));
+    instBody.appendChild(UI.row([UI.group('演奏', [K('mono'), K('glide'), K('spread'), K('voices')]), UI.group('揉弦 · 颤音', [K('vib.rate'), K('vib.depth'), K('vib.delay')]), UI.group('包络', [K('env.a'), K('env.d'), K('env.s'), K('env.r'), envViewEl()])], 'lvl2-inline'));
+  }
+  function envViewEl() {
+    const w = UI.el('div', 'live-env'); const c = document.createElement('canvas'); w.appendChild(c); w.title = '包络曲线与播放头：按下沿 A/D/S 走，松开进入 R · ADSR with playhead';
+    liveViews.push({ key: 'env', view: new UI.EnvView(c, () => ({ a: real('env.a'), d: real('env.d'), s: real('env.s'), r: real('env.r'), gate: state.gate, onAt: state.gateOn, offAt: state.gateOff, now: engine.ctx.currentTime })) });
+    return w;
+  }
+  function lfoViewEl(idx, label, getPhase) {
+    const w = UI.el('div', 'live-lfo'); const c = document.createElement('canvas'); w.appendChild(c); w.title = 'LFO 波形与当前相位 · LFO shape and phase';
+    liveViews.push({ key: label, view: new UI.LfoView(c, () => { const st = getPhase(); return { shape: st.shape, phase: st.phase, sh: st.sh, label }; }) });
+    return w;
   }
   function renderModList() {
     if (!modListEl) return; modListEl.innerHTML = '';
@@ -394,8 +407,8 @@
 
   /* ================= 演奏 ================= */
   function playNote(n, vel, dur) { engine.noteOn(n, vel); keyboard.light(n, true); setTimeout(() => { engine.noteOff(n); keyboard.light(n, false); }, dur * 1000); }
-  function noteOn(n, vel) { state.key = n / 127; state.vel = vel; diag.notes = (diag.notes || 0) + 1; if (diag.notes % 16 === 1) logAction('noteOn ' + UI.noteName(n) + ' (' + diag.notes + ' 音)'); if (real('arp.mode') !== 'off') { sched.hold(n); return; } engine.noteOn(n, vel); }
-  function noteOff(n) { if (real('arp.mode') !== 'off') { sched.unhold(n); return; } if (state.sustain) { state.sustained.add(n); return; } engine.noteOff(n); }
+  function noteOn(n, vel) { state.key = n / 127; state.vel = vel; state.lastFreq = 440 * Math.pow(2, (n - 69) / 12); state.gate = true; state.gateOn = engine.ctx.currentTime; state.held.add(n); diag.notes = (diag.notes || 0) + 1; if (diag.notes % 16 === 1) logAction('noteOn ' + UI.noteName(n) + ' (' + diag.notes + ' 音)'); if (real('arp.mode') !== 'off') { sched.hold(n); return; } engine.noteOn(n, vel); }
+  function noteOff(n) { state.held.delete(n); if (!state.held.size) { state.gate = false; state.gateOff = engine.ctx.currentTime; } if (real('arp.mode') !== 'off') { sched.unhold(n); return; } if (state.sustain) { state.sustained.add(n); return; } engine.noteOff(n); }
   function setSustain(on) { state.sustain = on; if (!on) { for (const n of state.sustained) engine.noteOff(n); state.sustained.clear(); } }
   function setOctave(o) {
     state.octave = Math.max(-2, Math.min(3, o)); const base = 36 + 12 * state.octave; keyboard.setBase(base);
@@ -640,6 +653,6 @@
     setInterval(() => { if (sched && arpChip) arpChip.textContent = real('arp.mode') === 'off' ? '' : '琶音中 Arp · 按住琴键 hold keys · ' + sched.held.length; }, 500);
   }
   $('#enter').addEventListener('click', boot);
-  root.SHISUI.VERSION = '0.4.0';
+  root.SHISUI.VERSION = '0.5.0';
   root.SHISUI.app = { state, engine, bus, setParam, loadPreset, surprise, diag, buildReport, setDecayPaused, stopRandom, setPlain, get sched() { return sched; } };
 })(window);
