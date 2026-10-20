@@ -37,7 +37,11 @@ cd SHISUI1
 
 ## 字体
 
-界面标题用 [ZCOOL QingKe HuangYou（站酷庆科黄油体）](https://fonts.google.com/specimen/ZCOOL+QingKe+HuangYou)，英文与数字用 [Silkscreen](https://fonts.google.com/specimen/Silkscreen) 像素字，正文用 ZCOOL XiaoWei。三者都是 SIL Open Font License，可商用、可随项目分发。
+界面标题用 [ZCOOL QingKe HuangYou（站酷庆科黄油体）](https://fonts.google.com/specimen/ZCOOL+QingKe+HuangYou)，英文与数字用 [Silkscreen](https://fonts.google.com/specimen/Silkscreen) 像素字，正文用 ZCOOL XiaoWei。三者都是 SIL Open Font License，可商用、可随项目分发；已按界面用到的字子集化后放在 `fonts/`（约 0.6 MB），不依赖 Google Fonts，中国大陆和离线都能正常显示。许可证见 `fonts/OFL-*.txt`。
+
+## 中国大陆访问
+
+GitHub Pages 在大陆时通时断。给国内朋友用，最稳的是直接发离线 ZIP（上面的一键下载链接，或把 ZIP 转存到网盘），解压双击 `index.html` 即可，不需要联网。
 
 ## 测试
 
