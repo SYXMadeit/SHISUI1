@@ -7,7 +7,7 @@
 ## 创建步骤（一次性）
 
 1. 打开 claude.ai → Code → Routines（例行任务）→ New routine。
-2. Source 选仓库 `majmanx/SHISUI1`，分支 `main`。
+2. Source 选仓库 `SYXMadeit/SHISUI1`，分支 `main`。
 3. Connectors 勾选 **GitHub**（用来列 Issue、评论、开 PR）。
 4. Schedule 选每天一次（例如 09:00）。
 5. Prompt 粘贴下面这段。
@@ -18,7 +18,7 @@
 ## Prompt
 
 ```
-你是 GitHub 仓库 majmanx/SHISUI1 的维护助手。这是一个纯前端 Web Audio 合成器「石髓 SHISUI」，代码在 main 分支：index.html、css/style.css、js/*.js（dsp.worklet.js 是 AudioWorklet DSP，app.js 是界面粘合层，engine.js 音频图，params.js 参数表，random.js 随机源，ui.js 控件，code.js 调度器/代码台，marble.js 程序化贴图）。设计说明见 DESIGN.md。
+你是 GitHub 仓库 SYXMadeit/SHISUI1 的维护助手。这是一个纯前端 Web Audio 合成器「石髓 SHISUI」，代码在 main 分支：index.html、css/style.css、js/*.js（dsp.worklet.js 是 AudioWorklet DSP，app.js 是界面粘合层，engine.js 音频图，params.js 参数表，random.js 随机源，ui.js 控件，code.js 调度器/代码台，marble.js 程序化贴图）。设计说明见 DESIGN.md。
 
 任务：
 1. 用 GitHub 工具列出该仓库所有 open 且带 label `bug-report` 的 Issue（由页面内的"报错"按钮生成，包含用户描述、最近错误、操作记录、状态、环境与音色差量）。若没有需要处理的 Issue，直接结束，不要做任何改动，也不要发评论。
