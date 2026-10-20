@@ -640,12 +640,12 @@
     for (const p of S.PARAMS) entries.push({ kind: '参数', label: p.label, en: p.en + ' ' + p.id, abbr: S.GROUPS[p.group] || '', act: () => { const c = controls[p.id]; if (!c) return; if (!c.el.offsetParent) setMode('deep'); setTimeout(() => c.flash(), 50); info(p); } });
     allPresets().forEach((pr, i) => entries.push({ kind: pr.user ? '我的预设' : '预设', label: pr.name, en: pr.tags.join(' '), act: () => loadPreset(i) }));
     for (const [id, , name, en] of INST_TILES) entries.push({ kind: '乐器', label: name, en, act: () => setParam('inst', id, { commit: true }) });
-    const acts = [['毒液模式 切换', 'venom toggle', () => setParam('vn.on', real('vn.on') ? 0 : 1, { commit: true })], ['惊喜 随机化音色', 'surprise randomize', surprise], ['刷新随机接口', 'refresh random', () => bus.refresh()], ['模式：玩', 'mode play', () => setMode('play')], ['模式：塑', 'mode shape', () => setMode('shape')], ['模式：深', 'mode deep', () => setMode('deep')], ['帮助', 'help', () => $('#help').classList.add('open')], ['全部静音', 'panic all notes off', () => engine.panic()], ['撤销', 'undo', undo], ['重做', 'redo', redo], ['A/B 切换', 'ab compare', abToggle], ['低动效（省电）切换', 'low motion', () => document.body.classList.toggle('low-motion')], ['存为我的预设', 'save preset', saveUserPreset], ['毒液模式玩法引导', 'venom guide', openVenomIntro], ['报错 / 反馈', 'report bug feedback', openReport], ['原声：恢复当前乐器的真实音色', 'acoustic natural', acousticNow], ['全部重置（两次确认）', 'reset everything factory', resetEverything], ['素面切换', 'plain toggle', () => setPlain(!document.body.classList.contains('plain'))], ['暂停 / 继续 碳-14 衰变', 'pause decay', () => setDecayPaused(!bus.paused)], ['停止全部随机', 'stop random', stopRandom], ['复位随机接口', 'reset random ports', resetRandom], ['断开随机接线', 'unroute random', unrouteRandom], ['语言：双语', 'language both', () => setLang('both')], ['语言：中文', 'language chinese', () => setLang('zh')], ['Language: English', 'language english', () => setLang('en')], ['录音 开始/停止', 'record', toggleRecord], ['显示金色：哑金 / 亮金 / 熔金 轮换', 'gold tone cycle', () => { const ks = Object.keys(UI.GOLDS); UI.setGold(ks[(ks.indexOf(UI.goldMode) + 1) % ks.length]); toast('显示金色：' + UI.GOLDS[UI.goldMode].zh); }], ['下载离线版 ZIP', 'download zip offline', () => window.open('https://github.com/' + S.REPO + '/archive/refs/heads/main.zip')], ['磨损状态', 'wear status', () => toast(wearText())], ['停止所有声音槽', 'stop slots', () => { engine.stopAllSlots(); }]];
+    const acts = [['毒液模式 切换', 'venom toggle', () => setParam('vn.on', real('vn.on') ? 0 : 1, { commit: true })], ['惊喜 随机化音色', 'surprise randomize', surprise], ['刷新随机接口', 'refresh random', () => bus.refresh()], ['模式：玩', 'mode play', () => setMode('play')], ['模式：塑', 'mode shape', () => setMode('shape')], ['模式：深', 'mode deep', () => setMode('deep')], ['帮助', 'help', () => $('#help').classList.add('open')], ['全部静音', 'panic all notes off', () => engine.panic()], ['撤销', 'undo', undo], ['重做', 'redo', redo], ['A/B 切换', 'ab compare', abToggle], ['低动效（省电）切换', 'low motion', () => document.body.classList.toggle('low-motion')], ['存为我的预设', 'save preset', saveUserPreset], ['毒液模式玩法引导', 'venom guide', openVenomIntro], ['报错 / 反馈', 'report bug feedback', openReport], ['原声：恢复当前乐器的真实音色', 'acoustic natural', acousticNow], ['全部重置（两次确认）', 'reset everything factory', resetEverything], ['素面切换', 'plain toggle', () => setPlain(!document.body.classList.contains('plain'))], ['暂停 / 继续 碳-14 衰变', 'pause decay', () => setDecayPaused(!bus.paused)], ['停止全部随机', 'stop random', stopRandom], ['复位随机接口', 'reset random ports', resetRandom], ['断开随机接线', 'unroute random', unrouteRandom], ['语言：双语', 'language both', () => setLang('both')], ['语言：中文', 'language chinese', () => setLang('zh')], ['Language: English', 'language english', () => setLang('en')], ['录音 开始/停止', 'record', toggleRecord], ['显示金色：哑金 / 亮金 / 熔金 轮换', 'gold tone cycle', () => { const ks = Object.keys(UI.GOLDS); UI.setGold(ks[(ks.indexOf(UI.goldMode) + 1) % ks.length]); toast('显示金色：' + UI.GOLDS[UI.goldMode].zh); }], ['装到手机 / 桌面（PWA）', 'install app pwa home screen', installApp], ['下载离线版 ZIP', 'download zip offline', () => window.open('https://github.com/' + S.REPO + '/archive/refs/heads/main.zip')], ['磨损状态', 'wear status', () => toast(wearText())], ['停止所有声音槽', 'stop slots', () => { engine.stopAllSlots(); }]];
     for (const [l, e, f] of acts) entries.push({ kind: '动作', label: l, en: e, act: f });
     if (!palette) palette = new UI.Palette($('#palette'), { onPick: (e) => e.act() }); palette.setEntries(entries);
   }
   function bindUI() {
-    const dl = $('#dl-zip'); if (dl) dl.href = 'https://github.com/' + S.REPO + '/archive/refs/heads/main.zip'; const wl = $('#wear-line'); if (wl) wl.textContent = wearText();
+    const dl = $('#dl-zip'); if (dl) dl.href = 'https://github.com/' + S.REPO + '/archive/refs/heads/main.zip'; const ib = $('#btn-install'); if (ib) ib.addEventListener('click', installApp); const wl = $('#wear-line'); if (wl) wl.textContent = wearText();
     $('#preset-prev').addEventListener('click', () => loadPreset(state.presetIdx - 1));
     $('#preset-next').addEventListener('click', () => loadPreset(state.presetIdx + 1));
     $('#preset-name').addEventListener('click', (e) => { e.stopPropagation(); $('#preset-list').classList.toggle('open'); });
@@ -698,6 +698,22 @@
   }
 
   /* ================= 启动 ================= */
+  /* ================= PWA：装到手机 / 桌面，离线可用 ================= */
+  let deferredInstall = null; const isStandalone = () => (root.matchMedia && root.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  root.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredInstall = e; const b = $('#btn-install'); if (b) b.classList.add('ready'); });
+  root.addEventListener('appinstalled', () => { deferredInstall = null; toast('已装到主屏幕 · Installed'); logAction('pwa installed'); });
+  function installApp() {
+    if (isStandalone()) { toast('已经是安装版了 · Already installed'); return; }
+    if (deferredInstall) { deferredInstall.prompt(); deferredInstall.userChoice.then(() => { deferredInstall = null; }).catch(() => {}); return; }
+    const ua = navigator.userAgent; const ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (location.protocol === 'file:') { toast('离线 ZIP 版不能装到主屏幕；用在线网址打开再装 · Open the online URL to install'); return; }
+    toast(ios ? 'iPhone / iPad：点 Safari 底部「分享」→「添加到主屏幕」 · Share → Add to Home Screen' : '浏览器菜单（⋮）→「安装应用」/「添加到主屏幕」 · Menu → Install app');
+  }
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+    navigator.serviceWorker.register('sw.js').then((reg) => {
+      reg.addEventListener('updatefound', () => { const nw = reg.installing; if (!nw) return; nw.addEventListener('statechange', () => { if (nw.state === 'installed' && navigator.serviceWorker.controller) toast('新版本已下载，下次打开生效 · Update ready for next launch'); }); });
+    }).catch(() => {});
+  }
   /* ================= 磨损: 石头随使用慢慢留下痕迹 (本机弹奏/打开次数 + 仓库星数) ================= */
   const WEAR_KEY = 'shisui.wear';
   function wearLevel(w) { const notes = Math.min(1, Math.log10(1 + (w.notes || 0)) / 4.3), sess = Math.min(1, (w.sessions || 0) / 60), stars = Math.min(1, Math.log10(1 + (w.stars || 0)) / 3); return Math.min(1, 0.4 * notes + 0.25 * sess + 0.35 * stars); }
@@ -726,9 +742,10 @@
     $('#splash').classList.add('hide'); $('#app').classList.add('on');
     requestAnimationFrame(loop);
     setTimeout(() => toast('欢迎。先转四个宏旋钮，按 Z X C V 弹奏，Shift+R 录音，空格刷新随机接口。'), 600);
+    if (!isStandalone() && /Android|iPhone|iPad|iPod/.test(navigator.userAgent) && !store.get('shisui.installHint', false)) { setTimeout(() => { toast('可以装到主屏幕当 App 用（? 指南里「装到手机」） · Install to home screen via the ? guide'); store.set('shisui.installHint', true); }, 4000); }
     setInterval(() => { if (sched && arpChip) arpChip.textContent = real('arp.mode') === 'off' ? '' : '琶音中 Arp · 按住琴键 hold keys · ' + sched.held.length; }, 500);
   }
   $('#enter').addEventListener('click', boot);
-  root.SHISUI.VERSION = '0.6.0';
+  root.SHISUI.VERSION = '0.7.0';
   root.SHISUI.app = { state, engine, bus, setParam, loadPreset, surprise, diag, buildReport, setDecayPaused, stopRandom, setPlain, get sched() { return sched; } };
 })(window);
