@@ -623,3 +623,7 @@ body.worn:not(.plain) .panel-body::before { content: ""; position: absolute; ins
 body.worn:not(.plain) .panel-body > * { position: relative; z-index: 1; }
 body.worn:not(.plain) .key::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--wear-img) 40px 60px / 320px; opacity: calc(var(--wear-op, 0.5) * 0.9); mix-blend-mode: soft-light; border-radius: inherit; }
 body.worn:not(.plain) .k-plate { filter: saturate(0.92) brightness(0.98); }
+
+/* ---------- PWA 安装 ---------- */
+#btn-install.ready { box-shadow: 0 0 0 2px var(--gold-2), 0 0 16px var(--glow); }
+#install-hint { color: var(--ink-3); }

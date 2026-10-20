@@ -149,10 +149,18 @@ FL Studio 式双排：`Z…M` 低八度（`S D G H J` 黑键），`Q…]` 高八
 - **磨损**：`S.applyWear(level)` 程序化生成划痕（亮暗成对）、磨亮/磨暗的斑、小崩口的透明 PNG，以 soft-light 叠在面板与琴键上，金色最多褪 40%。磨损度 = 0.4·本机弹奏音数（对数）+ 0.25·打开次数 + 0.35·仓库 star+fork 数（对数，GitHub API 每天查一次，失败静默）。只是皮肤：素面模式关闭，不影响任何功能。
 - **字体**：标题改为站酷庆科黄油体（硬核方块中文），英文与数字改为 Silkscreen 像素字，正文仍是 ZCOOL XiaoWei；三者均 OFL。
 
-## 14. 文件结构
+## 14. PWA · 自托管字体 · 国内发布
+
+- **PWA**：`manifest.webmanifest`（standalone、主题色、192 / 512 / maskable 图标）+ `sw.js`（预缓存全部静态文件约 2 MB，取资源时先回缓存、后台更新，新版下次打开生效，缓存名随版本号变）。安卓 Chrome / 桌面用 `beforeinstallprompt` 弹原生安装框；iOS 没有这个事件，按钮改为提示「分享 → 添加到主屏幕」。file:// 下不注册 Service Worker。图标由 Playwright 渲染 HTML 生成（`icons/`）。
+- **字体自托管**：三种 OFL 字体按界面用到的 1120 个字符子集化为 woff2（`fonts/`，约 0.6 MB），不再依赖 Google Fonts；国内、离线 ZIP、PWA 离线都能显示。
+- **国内发布**：见 docs/launch.md 第 6 节（离线 ZIP 转网盘为主，EdgeOne Pages / 备案为可选）。
+
+## 15. 文件结构
 
 ```
 index.html          页面骨架 + SVG 渐变/滤镜 + 帮助
+manifest.webmanifest / sw.js / icons/   PWA 清单、Service Worker、图标
+fonts/              子集化自托管字体（OFL）
 css/style.css       主题（大理石 / 毒液两套变量）
 js/dsp.worklet.js   AudioWorklet DSP（合成器 + 放大器）
 js/params.js        参数注册表（范围/曲线/格式/提示/随机区间）
