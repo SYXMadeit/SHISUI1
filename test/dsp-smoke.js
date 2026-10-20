@@ -44,3 +44,15 @@ console.log('amp default'.padEnd(26), 'peak', pk.toFixed(3));
 const s = new Synth(); s.P.inst = 'erhu'; for (let n = 0; n < 8; n++) s.onMsg({ type: 'noteOn', note: 60 + n, vel: 0.8 });
 const L = new Float32Array(128), R = new Float32Array(128); const t0 = Date.now(); for (let b = 0; b < 3750; b++) s.process([], [[L, R]]);
 console.log('perf: 8 erhu voices, 10s audio in', Date.now() - t0, 'ms');
+// 鼓机: 4/4 底鼓 + 贝斯 + 踩镲 + 拍手, 检查电平 / NaN / 侧链控制信号
+{
+  const Drums = procs['shisui-drums']; const d = new Drums(); let steps = 0; d.port.postMessage = (m) => { if (m.type === 'step') steps++; };
+  d.port.onmessage({ data: { type: 'params', D: { bpm: 126, kickDrive: 0.8, kickPunch: 0.7, duckAmt: 0.7 } } });
+  d.port.onmessage({ data: { type: 'pattern', pat: { kick: [1,0,0,0, 1,0,0,0, 1,0,0,0, 1,0,0,0], bass: [0,0,.7,0, 0,0,.7,0, 0,0,.7,0, 0,0,.7,1], bassNote: [0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,12], hat: [0,0,1,0, 0,0,1,0, 0,0,1,0, 0,0,1,0], clap: [0,0,0,0, 1,0,0,0, 0,0,0,0, 1,0,0,0] } } });
+  d.port.onmessage({ data: { type: 'run', on: true } });
+  const N = 128; const L = new Float32Array(N), R = new Float32Array(N), C = new Float32Array(N); let peak = 0, nan = false, cmin = 1, cmax = 0, sumsq = 0, cnt = 0;
+  const blocks = Math.floor(2.0 * 48000 / N);
+  for (let b = 0; b < blocks; b++) { d.process([], [[L, R], [C]]); for (let i = 0; i < N; i++) { if (!isFinite(L[i]) || !isFinite(C[i])) nan = true; peak = Math.max(peak, Math.abs(L[i])); cmin = Math.min(cmin, C[i]); cmax = Math.max(cmax, C[i]); sumsq += L[i] * L[i]; cnt++; } }
+  console.log('drums bodzin'.padEnd(26), 'peak', peak.toFixed(3), 'rms', Math.sqrt(sumsq / cnt).toFixed(4), 'nan', nan, 'duck ctl', cmin.toFixed(3), '..', cmax.toFixed(3), 'steps', steps);
+  if (nan || peak < 0.3 || peak > 1.05 || cmin > 0.6 || cmax < 0.85 || steps < 16) { console.error('DRUMS CHECK FAILED'); process.exitCode = 1; }
+}
