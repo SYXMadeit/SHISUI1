@@ -457,6 +457,7 @@ function DSP_WORKLET_MAIN() {
   }
 
   /* ---------- 鼓机: Tech House 底鼓 / 滚动贝斯 / 踩镲 / 拍手, 16 步音序, 输出 1 为侧链控制信号 ---------- */
+  const HAT_F = [205.3, 304.4, 369.6, 522.7, 540.0, 800.0].map((f) => f * 3.1); // 808 式六个方波的不谐和比, 整体上移到 ~0.6–2.5 kHz 再高通
   class DrumProcessor extends AudioWorkletProcessor {
     constructor() {
       super();
@@ -464,8 +465,8 @@ function DSP_WORKLET_MAIN() {
         bassCut: 0.35, bassRes: 0.4, bassDecay: 0.5, bassDrive: 0.3, bassWave: 0, bassRoot: 36, hatDecay: 0.3, hatTone: 0.6, clapDecay: 0.4, duckAmt: 0.6, duckRel: 0.25 };
       this.pat = { kick: new Float32Array(16), bass: new Float32Array(16), bassNote: new Float32Array(16), hat: new Float32Array(16), clap: new Float32Array(16) };
       this.running = false; this.step = 0; this.pos = 0; this.stepLen = SR * 60 / 124 / 4; this.ns = 0x9e3779b9 | 0;
-      this.k = { t: 9, ph: 0, vel: 0, lp: 0, dc: 0 }; this.b = { t: 9, ph: 0, vel: 0, f: 55, lp: 0, bp: 0, gate: 0.1, acc: 0 }; this.h = { t: 9, vel: 0, len: 0.05, hp1: 0, hp2: 0 }; this.c = { t: 9, vel: 0, lp: 0, bp: 0 };
-      this.duck = 0; this.blocks = 0;
+      this.k = { t: 9, ph: 0, vel: 0, lp: 0, dc: 0, f: 48 }; this.kOld = { on: false, ph: 0, f: 48, amp: 0, n: 0 }; this.b = { t: 9, ph: 0, vel: 0, f: 55, lp: 0, bp: 0, gate: 0.1, acc: 0, a: 0 }; this.h = { t: 9, vel: 0, len: 0.05, hp1: 0, hp2: 0, a: 0, ph: [0, 0, 0, 0, 0, 0] }; this.c = { t: 9, vel: 0, lp: 0, bp: 0, a: 0 };
+      this.duck = 0; this.duckOut = 0; this.blocks = 0;
       this.port.onmessage = (e) => { const m = e.data;
         if (m.type === 'params') Object.assign(this.D, m.D);
         else if (m.type === 'pattern') { for (const k in m.pat) if (this.pat[k] && m.pat[k]) this.pat[k].set(m.pat[k]); }
@@ -475,9 +476,9 @@ function DSP_WORKLET_MAIN() {
     noise() { let x = this.ns; x ^= x << 13; x ^= x >>> 17; x ^= x << 5; this.ns = x | 0; return (x / 2147483648); }
     fire(i) {
       const P = this.pat, D = this.D;
-      if (P.kick[i] > 0) { this.k.t = 0; this.k.ph = 0; this.k.vel = P.kick[i]; this.duck = 1; }
+      if (P.kick[i] > 0) { const k = this.k; if (k.t < 1.5) { const amp = Math.exp(-k.t / Math.max(0.03, D.kickDecay)) * k.vel; if (amp > 0.01) { this.kOld.on = true; this.kOld.ph = k.ph; this.kOld.f = k.f; this.kOld.amp = amp; this.kOld.n = 0; } } k.t = 0; k.ph = 0; k.vel = P.kick[i]; this.duck = 1; }
       if (P.bass[i] > 0) { this.b.t = 0; this.b.vel = P.bass[i]; this.b.acc = P.bass[i] > 0.9 ? 1 : 0; this.b.f = 440 * Math.pow(2, (D.bassRoot + P.bassNote[i] - 69) / 12); this.b.gate = (P.bass[i] > 0.9 ? 0.85 : 0.5) * this.stepLen / SR; }
-      if (P.hat[i] > 0) { this.h.t = 0; this.h.vel = P.hat[i]; this.h.len = (P.hat[i] > 0.9 ? 0.12 : 0.02) + D.hatDecay * (P.hat[i] > 0.9 ? 0.3 : 0.08); }
+      if (P.hat[i] > 0) { this.h.t = 0; this.h.vel = P.hat[i]; this.h.len = (P.hat[i] > 0.9 ? 0.07 : 0.015) + D.hatDecay * (P.hat[i] > 0.9 ? 0.18 : 0.06); }
       if (P.clap[i] > 0) { this.c.t = 0; this.c.vel = P.clap[i]; }
     }
     process(inputs, outputs) {
@@ -486,31 +487,33 @@ function DSP_WORKLET_MAIN() {
       const kDec = D.kickDecay, kTune = D.kickTune, kPeak = kTune * (2.5 + D.kickPunch * 7), kTau = 0.006 + D.kickPunch * 0.035, kDrive = 1 + D.kickDrive * 7, kDriveN = Math.tanh(kDrive);
       const bDrive = 1 + D.bassDrive * 9, bDriveN = Math.tanh(bDrive); const bQ = 1 - D.bassRes * 0.92;
       const hp = Math.exp(-2 * Math.PI * (3500 + D.hatTone * 7000) / SR); const cDec = 0.06 + D.clapDecay * 0.3; const cf = 2 * Math.sin(Math.PI * 1500 / SR);
-      const duckK = Math.exp(-1 / (SR * Math.max(0.02, D.duckRel))); const lvl = D.drumLevel;
+      const duckK = Math.exp(-1 / (SR * Math.max(0.02, D.duckRel))); const duckA = 1 - Math.exp(-1 / (SR * 0.0015)); const lvl = D.drumLevel;
       const k = this.k, b = this.b, h = this.h, c = this.c;
       for (let i = 0; i < n; i++) {
         /* 走带 */
         if (this.running) { this.stepLen = base * ((this.step & 1) ? (1 - sw) : (1 + sw)); if (this.pos >= this.stepLen) { this.pos -= this.stepLen; this.step = (this.step + 1) & 15; this.fire(this.step); if (ctl) this.port.postMessage({ type: 'step', step: this.step }); } this.pos++; }
         let kick = 0, bass = 0, hat = 0, clap = 0;
         /* 底鼓: 正弦 + 快速下滑的音头 + 点击, 削波成墙 */
-        if (k.t < 1.5) { const t = k.t; const f = kTune + (kPeak - kTune) * Math.exp(-t / kTau); k.ph += f * dt; if (k.ph >= 1) k.ph -= 1;
-          const env = Math.exp(-t / kDec); const click = D.kickClick * (Math.exp(-t / 0.0012) * this.noise() * 0.9 + Math.exp(-t / 0.004) * 0.6);
-          let x = (Math.sin(TWO_PI * k.ph) * env * 1.1 + click) * k.vel; x = Math.tanh(x * kDrive) / kDriveN; k.lp += (x - k.lp) * 0.55; x = k.lp; k.dc += (x - k.dc) * 0.0008; kick = x - k.dc; k.t += dt; }
+        if (this.kOld.on) { const o = this.kOld; o.ph += o.f * dt; if (o.ph >= 1) o.ph -= 1; const w = 1 - o.n / 160; kick += Math.sin(TWO_PI * o.ph) * o.amp * w; if (++o.n >= 160) o.on = false; }
+        if (k.t < 1.5) { const t = k.t; const f = kTune + (kPeak - kTune) * Math.exp(-t / kTau); k.f = f; k.ph += f * dt; if (k.ph >= 1) k.ph -= 1;
+          const env = Math.exp(-t / kDec); const click = D.kickClick * (Math.exp(-t / 0.0012) * this.noise() * 0.7 + Math.exp(-t / 0.004) * 0.6);
+          let x = (Math.sin(TWO_PI * k.ph) * env * 1.1 + click) * k.vel; x = Math.tanh(x * kDrive) / kDriveN; k.lp += (x - k.lp) * 0.55; x = k.lp; k.dc += (x - k.dc) * 0.0008; kick += x - k.dc; k.t += dt; }
         /* 贝斯: 锯齿/方波 → 共振低通(包络扫频) → 过载 */
         if (b.t < 2) { const t = b.t; const pdt = b.f * dt; b.ph += pdt; if (b.ph >= 1) b.ph -= 1; let x; const s1 = saw(b.ph, pdt);
           if (D.bassWave >= 0.5) { let p2 = b.ph + 0.5; if (p2 >= 1) p2 -= 1; x = s1 - saw(p2, pdt); } else x = s1;
           const aenv = (t < 0.003 ? t / 0.003 : 1) * (t < b.gate ? 1 : Math.exp(-(t - b.gate) / 0.025)) * Math.exp(-t / (0.12 + D.bassDecay * 0.9));
           const fenv = Math.exp(-t / (0.02 + D.bassDecay * 0.25)); let fc = 70 * Math.pow(2, D.bassCut * 6.3) * (0.3 + 0.7 * fenv + b.acc * 0.5); fc = Math.min(fc, SR * 0.22);
-          const f = 2 * Math.sin(Math.PI * fc / SR); b.lp += f * b.bp; const hpv = x - b.lp - bQ * b.bp; b.bp += f * hpv; let y = b.lp * aenv * b.vel;
+          const f = 2 * Math.sin(Math.PI * fc / SR); b.lp += f * b.bp; const hpv = x - b.lp - bQ * b.bp; b.bp += f * hpv; const target = aenv * b.vel; b.a += (target - b.a) * (target > b.a ? 0.08 : 0.02); let y = b.lp * b.a;
           y = Math.tanh(y * bDrive) / bDriveN; bass = y; b.t += dt; }
         /* 踩镲: 噪声 → 两级高通 → 指数衰减 */
-        if (h.t < 0.6) { const nz = this.noise(); h.hp1 += (nz - h.hp1) * (1 - hp); let y = nz - h.hp1; h.hp2 += (y - h.hp2) * (1 - hp); y -= h.hp2; hat = y * Math.exp(-h.t / h.len) * h.vel; h.t += dt; }
+        if (h.t < 0.6 || h.a > 1e-4) { let m = 0; for (let j = 0; j < 6; j++) { h.ph[j] += HAT_F[j] * dt; if (h.ph[j] >= 1) h.ph[j] -= 1; m += h.ph[j] < 0.5 ? 1 : -1; } const src = m * 0.09 + this.noise() * 0.45;
+          h.hp1 += (src - h.hp1) * (1 - hp); let y = src - h.hp1; h.hp2 += (y - h.hp2) * (1 - hp); y -= h.hp2; const target = h.t < 0.6 ? Math.exp(-h.t / h.len) * h.vel : 0; h.a += (target - h.a) * (target > h.a ? 0.5 : 0.03); hat = y * h.a; h.t += dt; }
         /* 拍手: 三个短脉冲 + 尾巴, 带通 */
         if (c.t < 0.8) { const t = c.t; let env = 0; for (let j = 0; j < 3; j++) { const tt = t - j * 0.011; if (tt >= 0) env += Math.exp(-tt / 0.0035); } env += (t > 0.03 ? Math.exp(-(t - 0.03) / cDec) : 0) * 0.5;
-          const nz = this.noise(); c.lp += cf * c.bp; const hpv = nz - c.lp - 0.5 * c.bp; c.bp += cf * hpv; clap = c.bp * env * c.vel * 1.4; c.t += dt; }
+          const nz = this.noise(); c.lp += cf * c.bp; const hpv = nz - c.lp - 0.5 * c.bp; c.bp += cf * hpv; const target = env * c.vel; c.a += (target - c.a) * (target > c.a ? 0.35 : 0.03); clap = c.bp * c.a * 1.4; c.t += dt; }
         /* 侧链 */
-        this.duck *= duckK; if (ctl) ctl[i] = 1 - D.duckAmt * this.duck;
-        const mono = kick * 0.72 + bass * 0.4; const l = (mono + hat * 0.17 + clap * 0.34) * lvl, r = (mono + hat * 0.23 + clap * 0.28) * lvl;
+        this.duck *= duckK; this.duckOut += (this.duck - this.duckOut) * (this.duck > this.duckOut ? duckA : 1); if (ctl) ctl[i] = 1 - D.duckAmt * this.duckOut;
+        const mono = kick * 0.72 + bass * 0.4; const l = (mono + hat * 0.13 + clap * 0.3) * lvl, r = (mono + hat * 0.17 + clap * 0.25) * lvl;
         L[i] = l; R[i] = r;
       }
       return true;
