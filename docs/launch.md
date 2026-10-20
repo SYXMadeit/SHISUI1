@@ -4,7 +4,7 @@
 
 ## 0. 发布前一小时清单
 
-- [ ] GitHub 用户名 / 版权名改好（LICENSE 已写 SYXMadeit）。改用户名后 Pages 网址会变成 `https://<新用户名>.github.io/SHISUI1/`，旧网址会 404；README 与例行任务提示词里的链接同步改。
+- [x] GitHub 用户名 / 版权名改好（LICENSE 已写 SYXMadeIt）。改用户名后 Pages 网址会变成 `https://<新用户名>.github.io/SHISUI1/`，旧网址会 404；README 与例行任务提示词里的链接同步改。
 - [ ] 仓库 Settings → General：Description 一句话、Website 填 Pages 网址、Topics：`web-audio` `synthesizer` `chinese-instruments` `guzheng` `erhu` `cymatics` `physical-modeling` `generative-music`。
 - [ ] 发 Release `v0.5.0-beta`，正文三行：是什么、怎么玩、怎么反馈。
 - [ ] 录 3 段素材（见下），一张 1280×640 的社交封面图（金沙大理石 + 一件乐器图标 + 「石髓 SHISUI」）。
@@ -53,5 +53,5 @@
 
 ## 5. 命名与署名
 
-- 作者署名统一用 **SYXMadeit**（LICENSE、视频片尾、社交主页）。
+- 作者署名统一用 **SYXMadeIt**（GitHub 用户名 SYXMadeit）（LICENSE、视频片尾、社交主页）。
 - 项目名统一写 **石髓 SHISUI**，英文语境用 SHISUI。

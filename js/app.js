@@ -22,7 +22,7 @@
   root.addEventListener('unhandledrejection', (e) => logError('promise', e.reason && e.reason.message ? e.reason.message : e.reason, e.reason && e.reason.stack ? e.reason.stack.split('\n').slice(0, 4).join(' | ') : ''));
   { const ce = console.error.bind(console); console.error = (...a) => { logError('console', a.map((x) => (x && x.message) || String(x)).join(' ')); ce(...a); }; const cw = console.warn.bind(console); console.warn = (...a) => { logError('warn', a.map((x) => (x && x.message) || String(x)).join(' ')); cw(...a); }; }
   /* 仓库地址：在 github.io 上运行时从网址推断 (改用户名后自动跟随)，否则用默认值 */
-  S.REPO = (() => { const m = /^([^.]+)\.github\.io$/.exec(location.hostname); if (m) { const seg = location.pathname.split('/').filter(Boolean)[0]; if (seg) return m[1] + '/' + seg; } return 'majmanx/SHISUI1'; })();
+  S.REPO = (() => { const m = /^([^.]+)\.github\.io$/.exec(location.hostname); if (m) { const seg = location.pathname.split('/').filter(Boolean)[0]; if (seg) return m[1] + '/' + seg; } return 'SYXMadeit/SHISUI1'; })();
   const engine = new S.Engine(); const bus = new S.RandomBus();
   let wtBlockEl = null;
   let sched = null, controls = {}, modIndex = {}, keyboard, xyPad, scope, palette, codeConsole; const liveViews = []; let instScope = null;
