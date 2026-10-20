@@ -19,11 +19,14 @@
   UI.gold = (venom) => (venom ? UI.VENOM_GOLD : UI.GOLDS[UI.goldMode]);
   UI.bgFill = (venom) => (venom ? 'rgba(12,11,18,0.92)' : 'rgba(22,19,14,0.92)');
   /* 三层描边: 暗晕 → 金身(带光) → 亮芯。调用前先 beginPath 画好路径 */
+  /* 轻量模式: 手机 / 弱机上不用画布阴影 (iOS 上 shadowBlur 极慢), 用一圈半透明粗线代替光晕 */
+  UI.lite = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.hardwareConcurrency || 8) <= 4;
   UI.strokeNeon = (ctx, pal, w, alpha) => {
     const a = alpha == null ? 1 : alpha; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     ctx.globalAlpha = a * 0.7; ctx.shadowBlur = 0; ctx.strokeStyle = 'rgba(0,0,0,0.85)'; ctx.lineWidth = w + 2.6; ctx.stroke();
-    ctx.globalAlpha = a; ctx.strokeStyle = pal.body; ctx.lineWidth = w; ctx.shadowColor = pal.glow; ctx.shadowBlur = w * 3; ctx.stroke();
-    ctx.shadowBlur = 0; ctx.strokeStyle = pal.core; ctx.lineWidth = Math.max(0.8, w * 0.42); ctx.stroke(); ctx.globalAlpha = 1;
+    if (UI.lite) { ctx.globalAlpha = a * 0.35; ctx.strokeStyle = pal.glow; ctx.lineWidth = w * 2.6; ctx.stroke(); ctx.globalAlpha = a; ctx.strokeStyle = pal.body; ctx.lineWidth = w; ctx.stroke(); }
+    else { ctx.globalAlpha = a; ctx.strokeStyle = pal.body; ctx.lineWidth = w; ctx.shadowColor = pal.glow; ctx.shadowBlur = w * 3; ctx.stroke(); ctx.shadowBlur = 0; }
+    ctx.strokeStyle = pal.core; ctx.lineWidth = Math.max(0.8, w * 0.42); ctx.stroke(); ctx.globalAlpha = 1;
   };
   UI.canvasFont = (px) => px + 'px Silkscreen, Menlo, monospace';
   const setup = (cv) => { const ctx = cv.getContext('2d'); const dpr = devicePixelRatio > 1 ? 2 : 1; const W = cv.clientWidth * dpr, H = cv.clientHeight * dpr; if (!W) return null; if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; } return { ctx, dpr, W, H }; };

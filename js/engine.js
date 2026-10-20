@@ -67,7 +67,13 @@
       const tHigh = this.tiltHigh = ctx.createBiquadFilter(); tHigh.type = 'highshelf'; tHigh.frequency.value = 3200; tHigh.gain.value = 0;
       this.warmth = 0;
       const anSynth = this.anSynth = ctx.createAnalyser(); anSynth.fftSize = 4096; anSynth.smoothingTimeConstant = 0; synth.connect(anSynth);
-      synth.connect(filter); filter.connect(amp); amp.connect(tLow); tLow.connect(tHigh); tHigh.connect(choIn); choOut.connect(dlyIn); dlyOut.connect(revIn); revOut.connect(comp); comp.connect(master); master.connect(lim); lim.connect(an); an.connect(ctx.destination);
+      /* 鼓机 + 侧链: 输出 0 = 鼓音频 → 压缩器; 输出 1 = 控制信号 → duck 增益 (采样级侧链) */
+      const drums = this.drums = new AudioWorkletNode(ctx, 'shisui-drums', { numberOfInputs: 0, numberOfOutputs: 2, outputChannelCount: [2, 1] });
+      const drumGain = this.drumGain = ctx.createGain(); drumGain.gain.value = 1; drums.connect(drumGain, 0); drumGain.connect(comp);
+      const drumRev = this.drumRev = ctx.createGain(); drumRev.gain.value = 0.08; drums.connect(drumRev, 0); drumRev.connect(revIn);
+      const duck = this.duck = ctx.createGain(); duck.gain.value = 0; drums.connect(duck.gain, 1);
+      this.D = {}; this.dirtyD = false; this.onDrumStep = null; drums.port.onmessage = (e) => { if (e.data.type === 'step' && this.onDrumStep) this.onDrumStep(e.data.step); };
+      synth.connect(duck); duck.connect(filter); filter.connect(amp); amp.connect(tLow); tLow.connect(tHigh); tHigh.connect(choIn); choOut.connect(dlyIn); dlyOut.connect(revIn); revOut.connect(comp); comp.connect(master); master.connect(lim); lim.connect(an); an.connect(ctx.destination);
 
       /* 录音抓取 (限幅之后，与你听到的一致) */
       const rec = this.rec = new AudioWorkletNode(ctx, 'shisui-rec', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2] });
@@ -94,6 +100,7 @@
       const ctx = this.ctx, t = ctx.currentTime, tc = 0.012;
       if (p.target === 'synth') { this.P[p.key] = v; this.dirtyP = true; return; }
       if (p.target === 'amp') { this.A[p.key] = v; this.dirtyA = true; return; }
+      if (p.target === 'drum') { this.D[p.key] = v; this.dirtyD = true; if (id === 'drum.on') this.drums.port.postMessage({ type: 'run', on: v >= 0.5 }); return; }
       if (p.target === 'both') { this.P[p.key] = v; this.A[p.key] = v; this.dirtyP = this.dirtyA = true; return; }
       if (p.target !== 'native') return;
       switch (id) {
@@ -119,6 +126,7 @@
         case 'comp.amount': this.compAmt = v; this.applyComp(); break;
         case 'tone.pure': this.pure = v; this.P.pure = v; this.A.pure = v; this.dirtyP = this.dirtyA = true; this.applyComp(); this.revLP.frequency.setTargetAtTime(7500 - v * 2500, t, 0.05); this.scheduleIR(); break;
         case 'master.vol': this.master.gain.setTargetAtTime(v * v, t, tc); break;
+        case 'drum.rev': this.drumRev.gain.setTargetAtTime(v * 0.6, t, tc); break;
         default: break;
       }
     }
@@ -127,7 +135,10 @@
       if (!this.ready) return;
       if (this.dirtyP) { this.synth.port.postMessage({ type: 'params', P: this.P }); this.dirtyP = false; }
       if (this.dirtyA) { this.amp.port.postMessage({ type: 'params', A: this.A }); this.dirtyA = false; }
+      if (this.dirtyD) { this.drums.port.postMessage({ type: 'params', D: this.D }); this.dirtyD = false; }
     }
+    setDrum(obj) { Object.assign(this.D, obj); this.dirtyD = true; }
+    setDrumPattern(pat) { if (this.ready) this.drums.port.postMessage({ type: 'pattern', pat }); }
     scheduleIR() { clearTimeout(this._revTimer); this._revTimer = setTimeout(() => this.genIR(), 180); }
     genIR() {
       const ctx = this.ctx, sr = ctx.sampleRate; const wz = this.warmth || 0; const len = Math.max(1000, Math.floor(sr * this.revSize * (1 + (wz < 0 ? -wz * 0.6 : -wz * 0.3))));

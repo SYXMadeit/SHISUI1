@@ -161,6 +161,7 @@
     press(n, v, src) { if (this.down.has(n)) return; this.down.add(n); const k = this.keys.get(n); if (k) k.classList.add('down'); if (this.opts.onNote) this.opts.onNote(n, v, src); }
     release(n, src) { if (!this.down.has(n)) return; this.down.delete(n); const k = this.keys.get(n); if (k) k.classList.remove('down'); if (this.opts.onOff) this.opts.onOff(n, src); }
     light(n, on) { const k = this.keys.get(n); if (k) k.classList.toggle('lit', !!on); }
+    hint(list, cls) { cls = cls || 'hint'; this.c.querySelectorAll('.key.' + cls).forEach((k) => k.classList.remove(cls)); for (const n of list || []) { const k = this.keys.get(n); if (k) k.classList.add(cls); } }
     setBase(b) { for (const n of Array.from(this.down)) this.release(n, 'sys'); this.base = b; this.build(); }
   }
   UI.Keyboard = Keyboard;
@@ -311,29 +312,42 @@
   }
   UI.Scope = Scope;
 
-  /* ---------- 实时波形窗: 跟随 / 一发, 1·2·4 周期或自由滚动, 可叠频谱 ---------- */
+  /* ---------- 实时波形窗: 相关性锁相 (每帧找与上一帧最像的起点) + 帧间平滑 + 256 点绘制 ---------- */
   class MiniScope {
-    constructor(canvas, analyser, getFreq, opts) { this.cv = canvas; this.an = analyser; this.getFreq = getFreq; this.td = new Float32Array(analyser.fftSize); this.fd = null; this.hold = 0; this.opts = Object.assign({ mode: 'follow', cycles: 2, spec: false }, opts || {}); this.frozen = null; this.lastTrig = -1; this.getTrig = null; this.armed = false; }
+    constructor(canvas, analyser, getFreq, opts) {
+      this.cv = canvas; this.an = analyser; this.getFreq = getFreq; this.td = new Float32Array(analyser.fftSize); this.fd = null; this.hold = 0;
+      this.opts = Object.assign({ mode: 'follow', cycles: 2, spec: false }, opts || {}); this.frozen = null; this.lastTrig = -1; this.getTrig = null; this.armed = false;
+      this.N = 256; this.disp = new Float32Array(this.N); this.cand = new Float32Array(this.N); this.have = false;
+    }
+    /* 把 td[start .. start+span) 重采样成 N 点 (区间平均) */
+    resample(td, start, span, out) { const N = out.length; const step = span / N; for (let i = 0; i < N; i++) { const a = start + i * step, b = a + step; let acc = 0, c = 0; for (let j = Math.floor(a); j < b && j < td.length; j++) { acc += td[j]; c++; } out[i] = c ? acc / c : 0; } }
     draw(venom) {
       const cv = this.cv, ctx = cv.getContext('2d'); const dpr = devicePixelRatio > 1 ? 2 : 1; const W = cv.clientWidth * dpr, H = cv.clientHeight * dpr;
       if (!W) return; if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
-      const pal = UI.gold(venom); const o = this.opts; const sr = this.an.context.sampleRate;
+      const pal = UI.gold(venom); const o = this.opts; const sr = this.an.context.sampleRate; const N = this.N;
       this.an.getFloatTimeDomainData(this.td); let td = this.td;
       let rms = 0; for (let i = 0; i < td.length; i += 4) rms += td[i] * td[i]; rms = Math.sqrt(rms / (td.length / 4)); const active = rms > 0.004;
-      // 一发: 新音触发后等信号起来, 抓一帧冻结, 直到下一次触发
-      if (o.mode === 'oneshot') { const tr = this.getTrig ? this.getTrig() : 0; if (tr !== this.lastTrig) { this.lastTrig = tr; this.armed = true; } if (this.armed && active) { this.frozen = Float32Array.from(td); this.armed = false; } if (this.frozen) td = this.frozen; }
+      if (o.mode === 'oneshot') { const tr = this.getTrig ? this.getTrig() : 0; if (tr !== this.lastTrig) { this.lastTrig = tr; this.armed = true; } if (this.armed && active) { this.frozen = Float32Array.from(td); this.armed = false; this.have = false; } if (this.frozen) td = this.frozen; }
       ctx.fillStyle = UI.bgFill(venom); ctx.fillRect(0, 0, W, H);
       ctx.strokeStyle = pal.dim; ctx.lineWidth = 1; ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.stroke(); ctx.globalAlpha = 1;
-      if (o.spec) { // 底部频谱: 对数频率轴, 暗金柱
-        if (!this.fd) this.fd = new Float32Array(this.an.frequencyBinCount); this.an.getFloatFrequencyData(this.fd); const fd = this.fd; const bins = fd.length; const nb = 64; ctx.fillStyle = pal.dim;
+      if (o.spec) {
+        if (!this.fd) this.fd = new Float32Array(this.an.frequencyBinCount); this.an.getFloatFrequencyData(this.fd); const fd = this.fd; const bins = fd.length; const nb = 48; ctx.fillStyle = pal.dim;
         for (let i = 0; i < nb; i++) { const f0 = 30 * Math.pow(16000 / 30, i / nb), f1 = 30 * Math.pow(16000 / 30, (i + 1) / nb); const k0 = Math.max(1, Math.floor(f0 / (sr / 2) * bins)), k1 = Math.max(k0 + 1, Math.floor(f1 / (sr / 2) * bins)); let mx = -160; for (let k = k0; k < k1 && k < bins; k++) if (fd[k] > mx) mx = fd[k]; const h = Math.max(0, (mx + 90) / 90) * H * 0.5; ctx.fillRect((i / nb) * W, H - h, W / nb - 1 * dpr, h); }
       }
-      const f = this.getFreq ? this.getFreq() : 0; const period = f > 20 ? sr / f : 0; const cyc = o.cycles || 2;
-      const span = cyc && period > 0 ? Math.min(td.length - 2, Math.max(48, Math.round(period * cyc))) : Math.min(td.length - 2, cyc ? 1024 : td.length - 2);
-      let start = 0; if (cyc) { const lim = td.length - span; for (let i = 1; i < lim; i++) if (td[i - 1] <= 0 && td[i] > 0) { start = i; break; } }
-      const vis = o.mode === 'oneshot' && this.frozen ? 1 : active ? 1 : 0; if (!vis) this.hold = Math.max(0, this.hold - 0.03); else this.hold = 1;
-      let pk = 0; for (let i = start; i < start + span; i++) { const a = Math.abs(td[i]); if (a > pk) pk = a; } const g = Math.min(12, 0.9 / Math.max(pk, 0.02));
-      ctx.beginPath(); for (let x = 0; x < W; x++) { const i = start + Math.floor((x / W) * span); const y = H / 2 - Math.max(-1, Math.min(1, td[i] * g)) * H * 0.42; if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+      const f = this.getFreq ? this.getFreq() : 0; const period = f > 20 ? sr / f : 0; const cyc = o.cycles || 0;
+      const span = cyc && period > 0 ? Math.min(td.length - 2, Math.max(48, Math.round(period * cyc))) : cyc ? 1024 : td.length - 2;
+      const vis = (o.mode === 'oneshot' && this.frozen) || active; if (!vis) this.hold = Math.max(0, this.hold - 0.04); else this.hold = 1;
+      if (vis && (o.mode !== 'oneshot' || !this.have)) {
+        let start = 0;
+        if (cyc) { // 候选起点: 上升过零; 选与上一帧最相似的 (相关性锁相), 这样波形"流动"而不跳
+          const lim = td.length - span; let bestErr = Infinity; let found = 0;
+          for (let i = 1; i < lim && found < 24; i++) if (td[i - 1] <= 0 && td[i] > 0) { found++; if (!this.have) { start = i; break; }
+            let err = 0; const st = span / 32; for (let k = 0; k < 32; k++) { const v = td[i + Math.floor(k * st)]; const d = v * this.gain - this.disp[Math.floor(k * (N / 32))]; err += d * d; } if (err < bestErr) { bestErr = err; start = i; } }
+        }
+        let pk = 0; for (let i = start; i < start + span; i++) { const a = Math.abs(td[i]); if (a > pk) pk = a; } const g = Math.min(12, 0.9 / Math.max(pk, 0.02)); this.gain = this.have ? this.gain + (g - this.gain) * 0.2 : g;
+        this.resample(td, start, span, this.cand); const mix = this.have && cyc ? 0.45 : 1; for (let i = 0; i < N; i++) this.disp[i] += (this.cand[i] * this.gain - this.disp[i]) * mix; this.have = true;
+      }
+      ctx.beginPath(); for (let i = 0; i < N; i++) { const x = (i / (N - 1)) * W; const y = H / 2 - Math.max(-1, Math.min(1, this.disp[i])) * H * 0.42; if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
       UI.strokeNeon(ctx, pal, 1.7 * dpr, 0.3 + 0.7 * this.hold);
       ctx.fillStyle = pal.text; ctx.font = UI.canvasFont(8 * dpr);
       const tag = (o.mode === 'oneshot' ? 'ONE-SHOT' : 'FOLLOW') + ' · ' + (cyc ? cyc + ' CYC' : 'FREE') + (f > 20 ? ' · ' + Math.round(f) + ' Hz' : '') + (o.spec ? ' · SPEC' : '');

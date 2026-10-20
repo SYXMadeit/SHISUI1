@@ -140,6 +140,28 @@
     S('arp.rate', '琶音速率', 'Arp rate', 'seq', 'host', [[1, '1/4'], [2, '1/8'], [4, '1/16'], [3, '1/8T'], [8, '1/32']], 2),
     K('arp.oct', '琶音八度', 'Arp octaves', 'seq', 'host', 1, 3, 1, { step: 1, fmt: (v) => Math.round(v) + ' oct' }),
     K('arp.gate', '琶音门限', 'Arp gate', 'seq', 'host', 0.1, 1, 0.6, { fmt: pct }),
+    /* ---- 鼓机 ---- */
+    T('drum.on', '鼓机', 'Drums', 'drum', 'drum', 0, { tip: '开 / 停 16 步鼓机（底鼓 · 贝斯 · 踩镲 · 拍手），速度跟"琶音 · 走带"的 BPM。' }),
+    S('drum.kit', '套鼓', 'Kit', 'drum', 'host', [['bodzin', '博津 · 撞墙', 'Bodzin wall'], ['tech', '科技浩室', 'Tech house'], ['roll', '滚动贝斯', 'Rolling bass'], ['minimal', '极简', 'Minimal'], ['user', '自定义', 'Custom']], 'bodzin', { tip: '一键装入节奏型；自己点格子后会变成"自定义"。' }),
+    K('drum.level', '鼓量', 'Drum level', 'drum', 'drum', 0, 1, 0.8, { fmt: pct }),
+    K('drum.swing', '摇摆', 'Swing', 'drum', 'drum', 0, 1, 0.1, { fmt: pct, tip: '偶数 16 分音符推后，节奏晃起来。' }),
+    K('kick.tune', '底鼓音高', 'Kick tune', 'drum', 'drum', 35, 80, 48, { fmt: hz, tip: 'Bodzin 式底鼓在 45–52 Hz 最像"一堵墙"。', rnd: [0.2, 0.6] }),
+    K('kick.decay', '底鼓长度', 'Kick decay', 'drum', 'drum', 0.08, 0.9, 0.28, { curve: 'exp', fmt: ms, rnd: [0.2, 0.6] }),
+    K('kick.punch', '冲击', 'Punch', 'drum', 'drum', 0, 1, 0.55, { fmt: pct, tip: '音头从高往低滑得多快多远：越大越"点"。', rnd: [0.3, 0.9] }),
+    K('kick.drive', '撞墙', 'Wall drive', 'drum', 'drum', 0, 1, 0.5, { fmt: pct, tip: '把底鼓削成一面墙，但只有音头被削，正弦底部保持干净。', rnd: [0.2, 0.9] }),
+    K('kick.click', '点击', 'Click', 'drum', 'drum', 0, 1, 0.4, { fmt: pct, tip: '最前面那一下"嗒"。', rnd: [0, 0.8] }),
+    K('bass.cut', '贝斯截止', 'Bass cutoff', 'drum', 'drum', 0, 1, 0.35, { fmt: pct, rnd: [0.1, 0.8] }),
+    K('bass.res', '贝斯共振', 'Bass reso', 'drum', 'drum', 0, 1, 0.4, { fmt: pct, rnd: [0, 0.8] }),
+    K('bass.decay', '贝斯衰减', 'Bass decay', 'drum', 'drum', 0, 1, 0.5, { fmt: pct, rnd: [0.2, 0.8] }),
+    K('bass.drive', '贝斯过载', 'Bass drive', 'drum', 'drum', 0, 1, 0.3, { fmt: pct, rnd: [0, 0.8] }),
+    S('bass.wave', '贝斯波形', 'Bass wave', 'drum', 'drum', [[0, '锯齿', 'Saw'], [1, '方波', 'Square']], 0),
+    S('bass.follow', '贝斯根音', 'Bass root', 'drum', 'host', [['guide', '跟指路和弦', 'Follow guide'], ['last', '跟最后弹的音', 'Last note'], ['fixed', '固定 C', 'Fixed C']], 'guide', { tip: '贝斯走的根音从哪来：指路推荐的和弦根音 / 你最后弹的音 / 固定 C。' }),
+    K('hat.decay', '踩镲长度', 'Hat decay', 'drum', 'drum', 0, 1, 0.3, { fmt: pct }),
+    K('hat.tone', '踩镲音色', 'Hat tone', 'drum', 'drum', 0, 1, 0.6, { fmt: pct }),
+    K('clap.decay', '拍手长度', 'Clap decay', 'drum', 'drum', 0, 1, 0.4, { fmt: pct }),
+    K('duck.amt', '侧链深度', 'Duck amount', 'drum', 'drum', 0, 1, 0.6, { fmt: pct, tip: '底鼓一响，合成器被按下去多少（采样级，跟 kick 同步）。', rnd: [0.2, 0.9] }),
+    K('duck.rel', '侧链回弹', 'Duck release', 'drum', 'drum', 0.05, 0.6, 0.22, { curve: 'exp', fmt: ms, rnd: [0.2, 0.8] }),
+    K('drum.rev', '鼓混响', 'Drum reverb', 'drum', 'native', 0, 1, 0.08, { fmt: pct }),
   ];
 
   const PARAM_MAP = {}; for (const p of PARAMS) PARAM_MAP[p.id] = p;
@@ -174,18 +196,19 @@
   const GROUPS = {
     inst: '演奏', vib: '揉弦 / 颤音', env: '包络', guzheng: '古筝', erhu: '二胡', dizi: '竹笛', guan: '管子 · 唢呐', strings: '弦乐群',
     elec: '插电 · 拾音器', venom: '毒液', filter: '滤波', amp: '放大器', diode: '二极管', tube: '电子管', cab: '箱体',
-    chorus: '合唱', delay: '延迟', reverb: '石厅混响', master: '总线', macro: '宏', lfo: 'LFO', random: '随机接口', c14: '碳-14', seq: '琶音',
+    chorus: '合唱', delay: '延迟', reverb: '石厅混响', master: '总线', macro: '宏', lfo: 'LFO', random: '随机接口', c14: '碳-14', seq: '琶音', drum: '鼓机',
   };
   const GROUPS_EN = {
     inst: 'Play', vib: 'Vibrato', env: 'Envelope', guzheng: 'Guzheng', erhu: 'Erhu', dizi: 'Dizi', guan: 'Guan · Suona', strings: 'Strings',
     elec: 'Electric · Pickup', venom: 'Venom', filter: 'Filter', amp: 'Amplifier', diode: 'Diode', tube: 'Tube', cab: 'Cabinet',
-    chorus: 'Chorus', delay: 'Delay', reverb: 'Hall reverb', master: 'Master', macro: 'Macros', lfo: 'LFO', random: 'Random bay', c14: 'Carbon-14', seq: 'Arp',
+    chorus: 'Chorus', delay: 'Delay', reverb: 'Hall reverb', master: 'Master', macro: 'Macros', lfo: 'LFO', random: 'Random bay', c14: 'Carbon-14', seq: 'Arp', drum: 'Drums',
   };
   /* 中文分组标题 → 英文 (UI.group 自动附加) */
   const TITLE_EN = {
     '演奏': 'Play', '揉弦 · 颤音': 'Vibrato', '包络': 'Envelope', '拾音器': 'Pickup', '合成层': 'Synth layer', '毒液': 'Venom', '滤波': 'Filter', '二极管': 'Diode', '电子管': 'Tube', '箱体 · 电': 'Cabinet · Power',
     '合唱': 'Chorus', '乒乓延迟': 'Ping-pong delay', '石厅混响': 'Hall reverb', '琶音 · 走带': 'Arp · Transport', '碳-14 衰变': 'Carbon-14 decay',
     '古筝': 'Guzheng', '二胡': 'Erhu', '竹笛': 'Dizi', '管子 · 唢呐': 'Guan · Suona', '弦乐群': 'Strings',
+    '底鼓': 'Kick', '贝斯': 'Bass', '踩镲 · 拍手': 'Hat · Clap', '侧链': 'Sidechain', '节奏型': 'Pattern',
   };
   const SCALES = { penta: [0, 2, 4, 7, 9], yu: [0, 3, 5, 7, 10], minor: [0, 2, 3, 5, 7, 8, 10], whole: [0, 2, 4, 6, 8, 10], chrom: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11] };
   const MOD_SOURCES = [
