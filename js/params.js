@@ -66,7 +66,8 @@
     K('el.drive', '拾音增益', 'Pickup drive', 'elec', 'synth', 0, 1, 0.3, { fmt: pct, tip: '拾音器前级饱和。', rnd: [0, 1] }),
     K('el.bias', '偏置', 'Bias', 'elec', 'synth', 0, 1, 0.2, { fmt: pct, tip: '非对称偏置 → 偶次谐波，更"暖"。', rnd: [0, 1] }),
     K('el.synth', '合成层', 'Synth layer', 'elec', 'synth', 0, 1, 0, { fmt: pct, tip: '叠加一个振荡器层，让声学乐器像插了电一样厚。', rnd: [0, 0.7] }),
-    S('el.wave', '合成波形', 'Layer wave', 'elec', 'synth', [[0, '锯齿', 'Saw'], [1, '方波', 'Square'], [2, '正弦', 'Sine']], 0),
+    S('el.wave', '合成波形', 'Layer wave', 'elec', 'synth', [[0, '锯齿', 'Saw'], [1, '方波', 'Square'], [2, '正弦', 'Sine'], [3, '三角', 'Tri'], [4, '波表', 'Wavetable']], 0, { tip: '合成层的波形。"波表"用下面 64 点波表编辑器里的 16 帧，由"波表位置"在帧之间滑动。' }),
+    K('el.wtPos', '波表位置', 'WT position', 'elec', 'synth', 0, 1, 0, { fmt: (v) => 'F ' + (1 + v * 15).toFixed(1), tip: '在 16 帧波表之间滑动（可被 LFO / 接口调制，3D 波浪图会跟着走）。', rnd: [0, 1] }),
     K('el.detune', '合成移调', 'Layer transpose', 'elec', 'synth', -24, 24, 0, { step: 1, fmt: st, rnd: [0.25, 0.75] }),
     K('el.sub', '次低音', 'Sub', 'elec', 'synth', 0, 1, 0, { fmt: pct, tip: '低八度正弦，给"斗破"的底气。', rnd: [0, 0.8] }),
     /* ---- 毒液 ---- */

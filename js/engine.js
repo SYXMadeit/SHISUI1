@@ -149,6 +149,29 @@
     noteOn(note, vel) { if (this.ready) this.synth.port.postMessage({ type: 'noteOn', note, vel: vel === undefined ? 0.8 : vel }); }
     noteOff(note) { if (this.ready) this.synth.port.postMessage({ type: 'noteOff', note }); }
     allOff() { if (this.ready) this.synth.port.postMessage({ type: 'allOff' }); }
+    /* ---- 波表: 每帧 64 个控制点 → Catmull-Rom 样条 2048 点 → 3 级平滑 mip (防高音混叠) → 发给 worklet ---- */
+    setWavetable(frames) {
+      const N = 2048, M = 3; const n = frames.length; const data = new Float32Array(n * M * N);
+      const tmp = new Float32Array(N), tmp2 = new Float32Array(N);
+      const box = (src, dst, r) => { // 环形滑动平均
+        let acc = 0; for (let i = -r; i <= r; i++) acc += src[((i % N) + N) % N];
+        for (let i = 0; i < N; i++) { dst[i] = acc / (2 * r + 1); acc += src[(i + r + 1) % N] - src[((i - r) % N + N) % N]; }
+      };
+      for (let fi = 0; fi < n; fi++) {
+        const pts = frames[fi], K = pts.length;
+        for (let i = 0; i < N; i++) { // 周期 Catmull-Rom
+          const x = (i / N) * K; const k = x | 0, t = x - k; const p0 = pts[(k - 1 + K) % K], p1 = pts[k % K], p2 = pts[(k + 1) % K], p3 = pts[(k + 2) % K];
+          tmp[i] = 0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t * t + (-p0 + 3 * p1 - 3 * p2 + p3) * t * t * t);
+        }
+        let dc = 0; for (let i = 0; i < N; i++) dc += tmp[i]; dc /= N; let pk = 1e-6; for (let i = 0; i < N; i++) { tmp[i] -= dc; const a = Math.abs(tmp[i]); if (a > pk) pk = a; }
+        const g = 0.95 / pk; for (let i = 0; i < N; i++) tmp[i] *= g;
+        data.set(tmp, (fi * M) * N);
+        box(tmp, tmp2, 6); box(tmp2, tmp, 6); data.set(tmp, (fi * M + 1) * N);
+        box(tmp, tmp2, 24); box(tmp2, tmp, 24); data.set(tmp, (fi * M + 2) * N);
+      }
+      this.wtData = data; this.wtN = n;
+      if (this.ready) this.synth.port.postMessage({ type: 'wavetable', n, size: N, data });
+    }
     panic() { if (this.ready) this.synth.port.postMessage({ type: 'panic' }); }
     click(level) { if (this.ready) this.synth.port.postMessage({ type: 'click', level: level || 0.25 }); }
 

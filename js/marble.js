@@ -144,6 +144,31 @@
     document.body.classList.add('marble-ready');
     return S.marble;
   }
+  /* ---------- 磨损层: 划痕 + 磨亮的斑 + 边角崩口, 透明底, 按磨损度叠在面板与琴键上 ---------- */
+  function genWear(size, seed, level) {
+    const cv = document.createElement('canvas'); cv.width = cv.height = size; const ctx = cv.getContext('2d');
+    let st = seed * 9301 + 49297; const r = () => { st = (st * 9301 + 49297) % 233280; return st / 233280; };
+    ctx.clearRect(0, 0, size, size);
+    const nScr = Math.round(6 + 70 * level); // 细划痕: 亮边 + 暗边成对 (像石面被指甲/戒指刮过)
+    for (let i = 0; i < nScr; i++) { const x = r() * size, y = r() * size, L = 10 + r() * 60 * (0.4 + level), a = r() * Math.PI; const dx = Math.cos(a) * L, dy = Math.sin(a) * L; const al = 0.08 + r() * 0.22 * level;
+      ctx.lineWidth = 0.6 + r() * 0.8; ctx.strokeStyle = 'rgba(255,255,255,' + al + ')'; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + dx, y + dy); ctx.stroke();
+      ctx.strokeStyle = 'rgba(40,30,10,' + (al * 0.8) + ')'; ctx.beginPath(); ctx.moveTo(x + 0.8, y + 0.8); ctx.lineTo(x + dx + 0.8, y + dy + 0.8); ctx.stroke(); }
+    const nPatch = Math.round(2 + 10 * level); // 磨亮/磨暗的斑
+    for (let i = 0; i < nPatch; i++) { const x = r() * size, y = r() * size, R = 14 + r() * 50; const g = ctx.createRadialGradient(x, y, 0, x, y, R); const dark = r() < 0.5; g.addColorStop(0, dark ? 'rgba(60,45,20,' + (0.10 * level) + ')' : 'rgba(255,250,235,' + (0.16 * level) + ')'); g.addColorStop(1, 'rgba(0,0,0,0)'); ctx.fillStyle = g; ctx.fillRect(x - R, y - R, 2 * R, 2 * R); }
+    const nChip = Math.round(8 * level * level); // 崩口: 小的深色缺口 + 亮边
+    for (let i = 0; i < nChip; i++) { const x = r() * size, y = r() * size, R = 1.5 + r() * 3; ctx.fillStyle = 'rgba(30,22,10,' + (0.25 + 0.35 * level) + ')'; ctx.beginPath(); ctx.ellipse(x, y, R, R * (0.5 + r()), r() * Math.PI, 0, Math.PI * 2); ctx.fill(); ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 0.6; ctx.beginPath(); ctx.arc(x, y, R + 0.8, Math.PI, Math.PI * 1.8); ctx.stroke(); }
+    return cv.toDataURL('image/png');
+  }
+  S.wearLevel = 0;
+  S.applyWear = (level) => {
+    level = Math.max(0, Math.min(1, level || 0)); if (Math.abs(level - S.wearLevel) < 0.03 && S.wearImg) return; S.wearLevel = level;
+    const st = document.documentElement.style; if (level < 0.02) { document.body.classList.remove('worn'); st.removeProperty('--wear-img'); st.removeProperty('--gold-2'); st.removeProperty('--gold-3'); S.wearImg = null; return; }
+    S.wearImg = genWear(320, 101, level); st.setProperty('--wear-img', 'url("' + S.wearImg + '")'); st.setProperty('--wear-op', (0.35 + 0.65 * level).toFixed(2));
+    // 金色慢慢失去光泽 (最多退 40%): e8c15a → c9a24a, b8860b → 9a7210
+    const mix = (a, b, t) => '#' + [0, 2, 4].map((i) => Math.round(parseInt(a.slice(1 + i, 3 + i), 16) * (1 - t) + parseInt(b.slice(1 + i, 3 + i), 16) * t).toString(16).padStart(2, '0')).join('');
+    st.setProperty('--gold-2', mix('#e8c15a', '#c9a24a', level * 0.4)); st.setProperty('--gold-3', mix('#b8860b', '#9a7210', level * 0.4));
+    document.body.classList.add('worn');
+  };
   S.rebuildMarble = (gold) => build(gold);
   S.buildMarble = build;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => build()); else build();

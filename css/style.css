@@ -2,7 +2,9 @@
    石髓 SHISUI · 大理石 × 液态金属 主题
    ============================================================ */
 :root {
-  --font-brush: "Ma Shan Zheng", "STKaiti", "KaiTi", "Kaiti SC", "ZCOOL XiaoWei", "Noto Serif SC", serif;
+  --font-brush: "ZCOOL QingKe HuangYou", "Silkscreen", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-pixel: "Silkscreen", "ZCOOL QingKe HuangYou", Menlo, monospace;
+  --font-ink: "Ma Shan Zheng", "STKaiti", "KaiTi", "ZCOOL XiaoWei", serif;
   --marble-1: #f5f1e8; --marble-2: #e6e0d2; --marble-3: #cfc6b3;
   --gold-1: #fff3b0; --gold-2: #e8c15a; --gold-3: #b8860b; --gold-4: #7a5a08;
   --ink: #2b2620; --ink-2: #5e564a; --ink-3: #8b8273;
@@ -58,7 +60,7 @@ body.low-motion .veins-glow, body.low-motion .light-burst { animation: none; }
 /* ---------- 启动幕 ---------- */
 #splash { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(ellipse at 50% 40%, rgba(255, 246, 214, 0.75), rgba(214, 206, 188, 0.85) 70%); backdrop-filter: blur(4px); text-align: center; transition: opacity 0.9s; }
 #splash.hide { opacity: 0; pointer-events: none; }
-#splash h1 { font-family: var(--font-brush); font-size: clamp(56px, 11vw, 150px); margin: 0; letter-spacing: 0.2em; font-weight: 400; background: linear-gradient(160deg, #fff6c8 0%, #e8c15a 35%, #8a6512 55%, #ffe58a 75%, #b8860b 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 2px 0 rgba(255, 255, 255, 0.7)) drop-shadow(0 10px 24px rgba(184, 134, 11, 0.35)); }
+#splash h1 { font-family: var(--font-brush); font-size: clamp(56px, 11vw, 150px); margin: 0; letter-spacing: 0.12em; font-weight: 400; background: linear-gradient(160deg, #fff6c8 0%, #e8c15a 35%, #8a6512 55%, #ffe58a 75%, #b8860b 100%); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 2px 0 rgba(255, 255, 255, 0.7)) drop-shadow(0 10px 24px rgba(184, 134, 11, 0.35)); }
 #splash h2 { font-weight: 400; letter-spacing: 0.4em; font-size: clamp(12px, 1.6vw, 18px); color: #6b5c3a; margin: 8px 0 30px; }
 #splash p { max-width: 560px; color: #5e564a; line-height: 1.7; margin: 0 20px 26px; font-size: 14px; }
 #enter { font-size: 20px; letter-spacing: 0.3em; padding: 16px 44px; border-radius: 999px; }
@@ -130,9 +132,9 @@ body.venom .venom-switch { background: linear-gradient(180deg, #2c2937, #0f0e13)
 body.venom .panel { box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 0 0 1px rgba(140, 255, 90, 0.12); }
 body.venom .panel::after { background: radial-gradient(ellipse at 15% 0%, rgba(200, 120, 255, 0.12), transparent 50%); }
 .panel-title { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
-.pt-main { font-family: var(--font-brush); font-size: 21px; letter-spacing: 0.15em; font-weight: 400; background: linear-gradient(160deg, var(--gold-4), var(--gold-3) 40%, var(--gold-2) 70%, var(--gold-4)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.pt-main { font-family: var(--font-brush); font-size: 21px; line-height: 1.3; padding-top: 2px; letter-spacing: 0.12em; font-weight: 400; background: linear-gradient(160deg, var(--gold-4), var(--gold-3) 40%, var(--gold-2) 70%, var(--gold-4)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 body.venom .pt-main { background: linear-gradient(160deg, #dfffc8, #8cff5a 45%, #c77dff 90%); -webkit-background-clip: text; background-clip: text; }
-.pt-sub { font-size: 10px; letter-spacing: 0.15em; color: var(--ink-3); text-transform: uppercase; }
+.pt-sub { font-family: var(--font-pixel); font-size: 9px; letter-spacing: 0.04em; color: var(--ink-3); text-transform: uppercase; }
 .panel-body { display: flex; flex-direction: column; gap: 8px; }
 .row { display: flex; flex-wrap: wrap; gap: 6px 4px; align-items: flex-start; }
 .grp { padding: 6px 8px 4px; border-radius: 12px; background: rgba(255, 255, 255, 0.28); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: inset 0 0 0 1px rgba(184, 134, 11, 0.1); }
@@ -157,8 +159,10 @@ body.mode-shape .lvl3-inline { display: none !important; }
 .knob-svg { width: var(--size); height: var(--size); overflow: visible; }
 .k-track { fill: none; stroke: rgba(60, 50, 30, 0.18); stroke-width: 5; stroke-linecap: round; }
 .k-arc { fill: none; stroke: url(#goldStroke); stroke-width: 5; stroke-linecap: round; filter: drop-shadow(0 0 3px var(--glow)); }
-.k-mod { fill: none; stroke: var(--accent); stroke-width: 3; stroke-linecap: round; opacity: 0.9; }
-.k-moddot { fill: var(--accent); filter: drop-shadow(0 0 3px var(--accent)); }
+.k-mod { fill: none; stroke: #ffe28a; stroke-width: 3.6; stroke-linecap: round; opacity: 1; filter: drop-shadow(0 0 1px #2a1d00) drop-shadow(0 0 1px #2a1d00) drop-shadow(0 0 4px rgba(255, 214, 110, 0.9)); }
+.k-moddot { fill: #fff2bd; stroke: #3a2a00; stroke-width: 0.8; filter: drop-shadow(0 0 3px #ffd76a); }
+body.venom .k-mod { stroke: var(--accent); filter: drop-shadow(0 0 1px #000) drop-shadow(0 0 4px var(--accent)); }
+body.venom .k-moddot { fill: #f0e0ff; stroke: #000; }
 .k-rim { fill: url(#goldRim); stroke: rgba(80, 60, 10, 0.5); stroke-width: 0.6; }
 .k-body { fill: url(#chrome); stroke: rgba(0, 0, 0, 0.35); stroke-width: 0.5; }
 .k-gloss { fill: url(#gloss); pointer-events: none; }
@@ -168,8 +172,8 @@ body.mode-shape .lvl3-inline { display: none !important; }
 .k-lock { pointer-events: none; }
 .knob-label { font-size: 11px; margin-top: 2px; letter-spacing: 0.05em; color: var(--ink-2); white-space: nowrap; }
 .knob.big .knob-label { font-family: var(--font-brush); font-size: 17px; letter-spacing: 0.15em; color: var(--ink); }
-.knob-val { font-size: 10px; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
-.knob.big .knob-val { font-size: 11px; }
+.knob-val { font-family: var(--font-pixel); font-size: 8px; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.knob.big .knob-val { font-size: 9px; }
 body.venom .k-track { stroke: rgba(255, 255, 255, 0.12); }
 body.venom .k-body { fill: url(#chromeV); }
 body.venom .knob.active .k-body, body.venom .knob:hover .k-body { fill: url(#chromeVHot); }
@@ -282,7 +286,7 @@ body.venom #info-bar b { color: var(--gold-2); }
 #keyboard { position: relative; height: 112px; user-select: none; touch-action: none; }
 .key { position: absolute; top: 0; border-radius: 0 0 6px 6px; cursor: pointer; transition: background 0.05s; }
 .key.white { height: 100%; background: linear-gradient(180deg, #fffdf7, #efe9da 85%, #d8d0bd); border: 1px solid rgba(90, 80, 60, 0.35); border-top: 0; box-shadow: inset 0 -6px 10px rgba(0, 0, 0, 0.08); z-index: 1; }
-.key .key-hint { position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-size: 9px; color: rgba(90, 80, 60, 0.55); pointer-events: none; font-family: Menlo, monospace; }
+.key .key-hint { position: absolute; top: 4px; left: 0; right: 0; text-align: center; font-size: 8px; color: rgba(90, 80, 60, 0.55); pointer-events: none; font-family: var(--font-pixel); }
 .key.black .key-hint { color: rgba(255, 255, 255, 0.55); }
 .key.kbd-range { box-shadow: inset 0 -3px 0 var(--gold-2), inset 0 -6px 10px rgba(0, 0, 0, 0.08); }
 .key.black { height: 60%; background: linear-gradient(180deg, #4a443a, #1f1c17 80%, #3a352c); border: 1px solid #111; border-top: 0; z-index: 2; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4), inset 0 -4px 6px rgba(255, 255, 255, 0.08); border-radius: 0 0 4px 4px; }
@@ -330,7 +334,7 @@ body.venom .help-box h3 { color: var(--gold-2); }
 .rec-btn .rec-led { width: 12px; height: 12px; border-radius: 50%; background: #7a2a1a; box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6); }
 .rec-btn.on .rec-led { background: #ff3b2f; box-shadow: 0 0 12px #ff3b2f; animation: recBlink 1s steps(2) infinite; }
 @keyframes recBlink { 50% { opacity: 0.35; } }
-.rec-time { font-variant-numeric: tabular-nums; font-family: Menlo, monospace; font-size: 13px; min-width: 60px; color: var(--ink-2); }
+.rec-time { font-variant-numeric: tabular-nums; font-family: var(--font-pixel); font-size: 11px; min-width: 70px; color: var(--ink-2); }
 .slots { display: grid; grid-template-columns: repeat(8, 1fr); gap: 8px; }
 @media (max-width: 1560px) { .slots { grid-template-columns: repeat(4, 1fr); } }
 @media (max-width: 640px) { .slots { grid-template-columns: repeat(2, 1fr); } }
@@ -354,14 +358,14 @@ body.venom .slot-ctl input[type=range] { accent-color: var(--gold-2); }
 #preset-list .sec { font-size: 10px; letter-spacing: 0.2em; color: var(--ink-3); padding: 6px 10px 2px; }
 
 /* ---------- 双语 ---------- */
-.en { font-family: "Cinzel", "ZCOOL XiaoWei", Georgia, serif; font-size: 0.72em; color: var(--ink-3); letter-spacing: 0.06em; margin-left: 3px; font-weight: 400; white-space: nowrap; }
+.en { font-family: var(--font-pixel); font-size: 0.66em; color: var(--ink-3); letter-spacing: 0; margin-left: 3px; font-weight: 400; white-space: nowrap; }
 .btn.gold .en, .tile.on .en, .chip.on .en, .mode-tab.on .en { color: #5a4408; }
 body.venom .btn.gold .en, body.venom .mode-tab.on .en { color: #1f4d16; }
 .knob-en { font-family: "Cinzel", Georgia, serif; font-size: 8.5px; color: var(--ink-3); letter-spacing: 0.04em; white-space: nowrap; line-height: 1.15; max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
 .knob.big .knob-en { font-size: 10px; }
 .mode-tab .en { display: block; font-size: 8px; letter-spacing: 0.15em; line-height: 1; margin: -2px 0 2px; text-align: center; }
 .sel-label .en, .tg-label .en, .grp-title .en { font-size: 0.78em; }
-.grp-title .en { font-family: "Cinzel", Georgia, serif; letter-spacing: 0.15em; }
+.grp-title .en { font-family: var(--font-pixel); letter-spacing: 0; }
 .knob-val { margin-top: 1px; }
 
 @media (max-width: 1640px) { .logo .l2 { display: none; } .preset-name { min-width: 150px; } }
@@ -584,3 +588,34 @@ body.venom .gold-ctl input[type=range] { accent-color: var(--gold-2); }
 .live-env canvas { display: block; width: 150px; height: 56px; }
 .live-lfo canvas { display: block; width: 120px; height: 52px; }
 body.venom .live-wave, body.venom .live-env, body.venom .live-lfo { border-color: rgba(140, 255, 90, 0.4); }
+
+/* ---------- 波表编辑器 / 3D 波浪 / 滤波曲线 / 波形窗工具条 ---------- */
+.wt-block { margin-top: 6px; padding: 6px 8px 6px; border-radius: 12px; background: rgba(255, 255, 255, 0.28); border: 1px solid rgba(255, 255, 255, 0.5); box-shadow: inset 0 0 0 1px rgba(184, 134, 11, 0.1); }
+body.venom .wt-block { background: rgba(255, 255, 255, 0.04); border-color: rgba(255, 255, 255, 0.08); }
+.wt-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.wt-note { color: var(--ink-3); }
+.wt-views { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; margin-top: 4px; }
+.wt-editor, .wt-3d, .live-flt { border-radius: 10px; overflow: hidden; border: 1px solid rgba(184, 134, 11, 0.5); box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.5), 0 0 0 2px rgba(255, 255, 255, 0.3); }
+.wt-editor canvas, .wt-3d canvas { display: block; width: 100%; height: 120px; cursor: crosshair; touch-action: none; }
+.wt-3d canvas { cursor: pointer; }
+.live-flt { width: 100%; margin: 0 0 6px; }
+.live-flt canvas { display: block; width: 100%; height: 76px; }
+.wt-ctl { align-items: center; margin-top: 6px; gap: 6px; }
+.wt-ctl input[type=range] { width: 90px; accent-color: var(--gold-3); }
+.wt-kind { font: inherit; font-size: 12px; padding: 4px 6px; border-radius: 8px; border: 1px solid rgba(120, 100, 60, 0.4); background: rgba(255, 255, 255, 0.6); color: var(--ink); min-height: 30px; }
+body.venom .wt-kind { background: rgba(255, 255, 255, 0.06); color: var(--ink); border-color: rgba(200, 180, 255, 0.3); }
+body.venom .wt-editor, body.venom .wt-3d, body.venom .live-flt { border-color: rgba(140, 255, 90, 0.4); }
+.lw-bar { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 2px; align-items: center; }
+.lw-grp { display: inline-flex; gap: 2px; padding: 2px; border-radius: 999px; background: rgba(0, 0, 0, 0.08); }
+body.venom .lw-grp { background: rgba(255, 255, 255, 0.06); }
+.lw-btn { min-height: 26px !important; padding: 2px 9px !important; font-size: 11px !important; border-radius: 999px !important; }
+.lw-btn.on { background: linear-gradient(160deg, var(--gold-1), var(--gold-2)) !important; color: #2b2620 !important; box-shadow: 0 0 10px var(--glow); }
+body.venom .lw-btn.on { color: #0f0e13 !important; }
+@media (max-width: 760px) { .wt-views { grid-template-columns: 1fr; } }
+
+/* ---------- 磨损: 划痕层叠在面板与琴键上, 不挡文字 (混合模式 + 低不透明度) ---------- */
+.panel-body { position: relative; }
+body.worn:not(.plain) .panel-body::before { content: ""; position: absolute; inset: -12px -14px -14px; pointer-events: none; z-index: 0; background: var(--wear-img) 0 0 / 320px; opacity: var(--wear-op, 0.5); mix-blend-mode: soft-light; }
+body.worn:not(.plain) .panel-body > * { position: relative; z-index: 1; }
+body.worn:not(.plain) .key::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: var(--wear-img) 40px 60px / 320px; opacity: calc(var(--wear-op, 0.5) * 0.9); mix-blend-mode: soft-light; border-radius: inherit; }
+body.worn:not(.plain) .k-plate { filter: saturate(0.92) brightness(0.98); }

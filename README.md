@@ -14,7 +14,7 @@
 无需构建、无需安装。
 
 - **在线**：<https://majmanx.github.io/SHISUI1/>（GitHub Pages），打开后点"唤醒石髓 AWAKEN"。
-- **本地**：下载 ZIP 解压，双击 `index.html`（Chrome / Edge / Firefox / Safari 最新版）。
+- **本地（一键下载）**：<https://github.com/majmanx/SHISUI1/archive/refs/heads/main.zip> → 解压 → 双击 `index.html`（Chrome / Edge / Firefox / Safari 最新版）。页内 `?` 指南里也有同一个下载按钮。
 - 或本地起个静态服务：`python3 -m http.server 8000` 然后打开 `http://localhost:8000/`。
 
 ## 上手
@@ -33,7 +33,11 @@
 git clone https://github.com/majmanx/SHISUI1.git
 cd SHISUI1
 ```
-或在 GitHub 仓库页面 Code → Download ZIP，解压得到 `SHISUI1-main` 文件夹，双击里面的 `index.html`。
+或直接下载 ZIP：<https://github.com/majmanx/SHISUI1/archive/refs/heads/main.zip>（等同于仓库页面 Code → Download ZIP），解压得到 `SHISUI1-main` 文件夹，双击里面的 `index.html`。
+
+## 字体
+
+界面标题用 [ZCOOL QingKe HuangYou（站酷庆科黄油体）](https://fonts.google.com/specimen/ZCOOL+QingKe+HuangYou)，英文与数字用 [Silkscreen](https://fonts.google.com/specimen/Silkscreen) 像素字，正文用 ZCOOL XiaoWei。三者都是 SIL Open Font License，可商用、可随项目分发。
 
 ## 测试
 
