@@ -140,6 +140,7 @@
     S('arp.rate', '琶音速率', 'Arp rate', 'seq', 'host', [[1, '1/4'], [2, '1/8'], [4, '1/16'], [3, '1/8T'], [8, '1/32']], 2),
     K('arp.oct', '琶音八度', 'Arp octaves', 'seq', 'host', 1, 3, 1, { step: 1, fmt: (v) => Math.round(v) + ' oct' }),
     K('arp.gate', '琶音门限', 'Arp gate', 'seq', 'host', 0.1, 1, 0.6, { fmt: pct }),
+    T('arp.latch', '琶音锁定', 'Arp latch', 'seq', 'host', 1, { tip: '开：连着点的音组成一组留在琶音里（手机上必须），停一秒再点就换新一组，再点同一个音可拿掉它；■ 停止全部 清空。关：只在按住时琶音。' }),
     /* ---- 鼓机 ---- */
     T('drum.on', '鼓机', 'Drums', 'drum', 'drum', 0, { tip: '开 / 停 16 步鼓机（底鼓 · 贝斯 · 踩镲 · 拍手），速度跟"琶音 · 走带"的 BPM。' }),
     S('drum.kit', '套鼓', 'Kit', 'drum', 'host', [['bodzin', '博津 · 撞墙', 'Bodzin wall'], ['tech', '科技浩室', 'Tech house'], ['roll', '滚动贝斯', 'Rolling bass'], ['minimal', '极简', 'Minimal'], ['user', '自定义', 'Custom']], 'bodzin', { tip: '一键装入节奏型；自己点格子后会变成"自定义"。' }),

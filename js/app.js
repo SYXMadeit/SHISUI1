@@ -55,7 +55,8 @@
       case 'drum.on': if (v && Math.abs(real('bpm') - 96) < 0.5) { setParam('bpm', 124, { commit: true }); toast('鼓机速度已设为 124 BPM · Tempo set to 124'); } break;
       case 'drum.kit': if (v !== 'user' && KITS[v]) { state.drum = cloneKit(KITS[v]); if (engine.ready) applyDrumPattern(); } break;
       case 'bass.follow': if (engine.ready) updateBassRoot(); break;
-      case 'arp.mode': if (sched) { sched.arp.mode = v; if (v === 'off') { sched.held = []; engine.allOff(); } } break;
+      case 'arp.mode': if (sched) { sched.arp.mode = v; if (v === 'off') { sched.held = []; engine.allOff(); } else if (sched.latch && !store.get('shisui.latchSeen', false)) { store.set('shisui.latchSeen', true); setTimeout(() => toast('琶音锁定已开：连着点的音组成一组留在琶音里，停一秒再点就换新一组，再点同一个音可拿掉它 · Arp latch: quick taps build a chord, pause then tap starts a new one'), 50); } } break;
+      case 'arp.latch': if (sched) { sched.latch = !!v; if (!v) sched.held = state.held.size ? Array.from(state.held) : []; } break;
       case 'arp.rate': if (sched) sched.arp.rate = v; break;
       case 'arp.oct': if (sched) sched.arp.oct = v; break;
       case 'arp.gate': if (sched) sched.arp.gate = v; break;
@@ -116,7 +117,7 @@
   function loop() {
     const now = performance.now(); const dt = Math.min(0.1, (now - lastT) / 1000); lastT = now;
     bus.tick(dt); state.decayEnv *= Math.exp(-dt * 7); modTick(dt); frame++;
-    if (guide && guideOn && guide.dirty && frame % 6 === 0) renderGuide();
+    if (guide && guideOn && guide.dirty && frame % 6 === 0 && !state.held.size) renderGuide(); // 手指还按着时不重排琴键上方的条, 免得键盘跳
     if (scope && frame % (UI.lite ? 3 : 2) === 0) { const vn = document.body.classList.contains('venom'); scope.draw(vn); drawVU(); if (instScope && instScope.cv.offsetParent) instScope.draw(vn); for (const lv of liveViews) if (lv.view.cv.offsetParent) lv.view.draw(vn); }
     if (frame % 4 === 0) updateRandomViews();
     if (engine.recording && recTimeEl && frame % 3 === 0) { const t = engine.recordingTime; recTimeEl.textContent = String(Math.floor(t / 60)).padStart(2, '0') + ':' + String(Math.floor(t % 60)).padStart(2, '0') + '.' + Math.floor((t % 1) * 10); }
@@ -164,7 +165,7 @@
     sw.appendChild(sm); ps.body.appendChild(sw); setTimeout(() => pick(store.get('shisui.scope', 'sand')), 0);
     ps.body.appendChild(UI.row([K('master.vol'), K('comp.amount'), K('flt.cutoff'), K('rev.mix')]));
     arpChip = UI.el('div', 'small', '');
-    const ga = UI.group('琶音 · 走带', [K('bpm'), K('arp.mode'), K('arp.rate'), K('arp.oct'), K('arp.gate')], 'lvl2-inline');
+    const ga = UI.group('琶音 · 走带', [K('bpm'), K('arp.mode'), K('arp.rate'), K('arp.oct'), K('arp.gate'), K('arp.latch')], 'lvl2-inline');
     ga.appendChild(UI.row([UI.btn(UI.bi('■ 停止全部', 'Stop all'), 'sm', () => { if (sched) { sched.clearAll(); sched.held = []; } engine.allOff(); }, '停止代码任务与琶音'), arpChip]));
     ps.body.appendChild(ga);
     main.appendChild(ps); scope = new UI.Scope(cv, engine.analyser);
@@ -531,8 +532,8 @@
 
   /* ================= 演奏 ================= */
   function playNote(n, vel, dur) { engine.noteOn(n, vel); keyboard.light(n, true); setTimeout(() => { engine.noteOff(n); keyboard.light(n, false); }, dur * 1000); }
-  function noteOn(n, vel) { state.key = n / 127; state.vel = vel; state.lastFreq = 440 * Math.pow(2, (n - 69) / 12); state.gate = true; state.gateOn = engine.ctx.currentTime; state.held.add(n); state.lastNote = n; diag.notes = (diag.notes || 0) + 1; wearNote(); if (guide && guideOn) guide.feed(n, vel, engine.ctx.currentTime); if (real('bass.follow') === 'last') updateBassRoot(); if (diag.notes % 16 === 1) logAction('noteOn ' + UI.noteName(n) + ' (' + diag.notes + ' 音)'); if (real('arp.mode') !== 'off') { sched.hold(n); return; } engine.noteOn(n, vel); }
-  function noteOff(n) { state.held.delete(n); if (guide) guide.release(n); if (!state.held.size) { state.gate = false; state.gateOff = engine.ctx.currentTime; } if (real('arp.mode') !== 'off') { sched.unhold(n); return; } if (state.sustain) { state.sustained.add(n); return; } engine.noteOff(n); }
+  function noteOn(n, vel) { state.key = n / 127; state.vel = vel; state.lastFreq = 440 * Math.pow(2, (n - 69) / 12); state.gate = true; state.gateOn = engine.ctx.currentTime; state.held.add(n); state.lastNote = n; diag.notes = (diag.notes || 0) + 1; wearNote(); if (guide && guideOn) guide.feed(n, vel, engine.ctx.currentTime); if (real('bass.follow') === 'last') updateBassRoot(); if (diag.notes % 16 === 1) logAction('noteOn ' + UI.noteName(n) + ' (' + diag.notes + ' 音)'); if (real('arp.mode') !== 'off') { if (sched.latch) { const now = performance.now(); const fresh = state.held.size === 1 && now - (sched.lastHoldAt || 0) > 1200; sched.lastHoldAt = now; if (fresh) sched.held = []; else if (sched.held.includes(n) && state.held.size === 1) { sched.unhold(n); return; } } sched.hold(n); return; } engine.noteOn(n, vel); }
+  function noteOff(n) { state.held.delete(n); if (guide) guide.release(n); if (!state.held.size) { state.gate = false; state.gateOff = engine.ctx.currentTime; } if (real('arp.mode') !== 'off') { if (!sched.latch) sched.unhold(n); return; } if (state.sustain) { state.sustained.add(n); return; } engine.noteOff(n); }
   function setSustain(on) { state.sustain = on; if (!on) { for (const n of state.sustained) engine.noteOff(n); state.sustained.clear(); } }
   function setOctave(o) {
     state.octave = Math.max(-2, Math.min(3, o)); const base = 36 + 12 * state.octave; keyboard.setBase(base);
@@ -811,6 +812,6 @@
     setInterval(() => { if (sched && arpChip) arpChip.textContent = real('arp.mode') === 'off' ? '' : '琶音中 Arp · 按住琴键 hold keys · ' + sched.held.length; }, 500);
   }
   $('#enter').addEventListener('click', boot);
-  root.SHISUI.VERSION = '0.8.0';
+  root.SHISUI.VERSION = '0.8.1';
   root.SHISUI.app = { state, engine, bus, setParam, loadPreset, surprise, diag, buildReport, setDecayPaused, stopRandom, setPlain, get sched() { return sched; } };
 })(window);

@@ -9,7 +9,7 @@
   class Scheduler {
     constructor(engine) {
       this.engine = engine; this.bpm = 96; this.tasks = []; this.nextId = 1; this.lookahead = 0.15; this.running = false;
-      this.held = []; this.arp = { mode: 'off', rate: 2, oct: 1, gate: 0.6 }; this.arpIdx = 0; this.arpDir = 1; this.arpNextTime = 0; this.piPos = 0;
+      this.held = []; this.latch = true; this.arp = { mode: 'off', rate: 2, oct: 1, gate: 0.6 }; this.arpIdx = 0; this.arpDir = 1; this.arpNextTime = 0; this.piPos = 0;
       this.onArpNote = null; this.piDigit = null; this.pending = new Set(); this.onBeat = null; this.beatCount = 0; this.nextBeatTime = 0;
     }
     get spb() { return 60 / this.bpm; }
