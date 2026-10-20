@@ -311,6 +311,72 @@
   }
   UI.Scope = Scope;
 
+  /* ---------- 实时波形窗: 按当前音高同步触发, 画两个周期, 像波表视图一样稳定流动 ---------- */
+  class MiniScope {
+    constructor(canvas, analyser, getFreq) { this.cv = canvas; this.an = analyser; this.getFreq = getFreq; this.td = new Float32Array(analyser.fftSize); this.last = null; this.hold = 0; }
+    draw(venom) {
+      const cv = this.cv, ctx = cv.getContext('2d'); const dpr = devicePixelRatio > 1 ? 2 : 1; const W = cv.clientWidth * dpr, H = cv.clientHeight * dpr;
+      if (!W) return; if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+      this.an.getFloatTimeDomainData(this.td); const td = this.td; const sr = this.an.context.sampleRate;
+      let rms = 0; for (let i = 0; i < td.length; i += 4) rms += td[i] * td[i]; rms = Math.sqrt(rms / (td.length / 4));
+      ctx.fillStyle = venom ? 'rgba(14,13,20,0.9)' : 'rgba(30,26,20,0.9)'; ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = venom ? 'rgba(140,255,90,0.12)' : 'rgba(232,193,90,0.14)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(0, H / 2); ctx.lineTo(W, H / 2); ctx.stroke();
+      const f = this.getFreq ? this.getFreq() : 0; const period = f > 20 ? sr / f : 0; const span = period > 0 ? Math.min(td.length / 2, Math.max(64, Math.round(period * 2))) : 1024;
+      // 触发: 在前半缓冲里找上升过零, 且尽量与上一次相位一致
+      let start = 0; const lim = td.length - span; for (let i = 1; i < lim; i++) if (td[i - 1] <= 0 && td[i] > 0) { start = i; break; }
+      const gold = venom ? '#8cff5a' : '#e8c15a'; const active = rms > 0.004;
+      if (!active) { this.hold = Math.max(0, this.hold - 0.03); } else this.hold = 1;
+      ctx.lineWidth = 1.6 * dpr; ctx.strokeStyle = gold; ctx.globalAlpha = 0.25 + 0.75 * this.hold; ctx.shadowColor = gold; ctx.shadowBlur = 6 * this.hold; ctx.beginPath();
+      let pk = 0; for (let i = start; i < start + span; i++) { const a = Math.abs(td[i]); if (a > pk) pk = a; } const g = Math.min(12, 0.9 / Math.max(pk, 0.02)); // 自动增益: 按窗口内峰值撑满
+      for (let x = 0; x < W; x++) { const i = start + Math.floor((x / W) * span); const y = H / 2 - Math.max(-1, Math.min(1, td[i] * g)) * H * 0.42; if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+      ctx.stroke(); ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+      ctx.fillStyle = venom ? 'rgba(140,255,90,0.6)' : 'rgba(232,193,90,0.6)'; ctx.font = (9 * dpr) + 'px Menlo, monospace'; ctx.fillText(f > 20 ? Math.round(f) + ' Hz · 2 cyc' : 'raw · pre-filter', 6 * dpr, H - 5 * dpr);
+    }
+  }
+  UI.MiniScope = MiniScope;
+
+  /* ---------- LFO 视图: 一个周期的波形 + 当前相位的小球 ---------- */
+  const lfoShape = (shape, p, sh) => { switch (shape) { case 'tri': return 1 - Math.abs(p * 2 - 1); case 'square': return p < 0.5 ? 1 : 0; case 'saw': return p; case 'random': return sh == null ? 0.5 : sh; default: return (Math.sin(p * 2 * Math.PI) + 1) / 2; } };
+  UI.lfoShape = lfoShape;
+  class LfoView {
+    constructor(canvas, getState) { this.cv = canvas; this.get = getState; }
+    draw(venom) {
+      const cv = this.cv, ctx = cv.getContext('2d'); const dpr = devicePixelRatio > 1 ? 2 : 1; const W = cv.clientWidth * dpr, H = cv.clientHeight * dpr; if (!W) return; if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+      const s = this.get(); ctx.fillStyle = venom ? 'rgba(14,13,20,0.9)' : 'rgba(30,26,20,0.9)'; ctx.fillRect(0, 0, W, H);
+      const gold = venom ? '#8cff5a' : '#e8c15a'; ctx.strokeStyle = gold; ctx.lineWidth = 1.4 * dpr; ctx.globalAlpha = 0.85; ctx.beginPath();
+      for (let x = 0; x <= W; x += 2) { const p = x / W; const v = lfoShape(s.shape, p, s.sh); const y = H * 0.85 - v * H * 0.7; if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y); }
+      ctx.stroke(); ctx.globalAlpha = 1;
+      const px = s.phase * W, py = H * 0.85 - lfoShape(s.shape, s.phase, s.sh) * H * 0.7;
+      ctx.fillStyle = venom ? '#dfffc8' : '#fff6c8'; ctx.shadowColor = gold; ctx.shadowBlur = 8 * dpr; ctx.beginPath(); ctx.arc(px, py, 3.2 * dpr, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+      ctx.fillStyle = venom ? 'rgba(140,255,90,0.6)' : 'rgba(232,193,90,0.6)'; ctx.font = (9 * dpr) + 'px Menlo, monospace'; ctx.fillText(s.label || '', 6 * dpr, H - 5 * dpr);
+    }
+  }
+  UI.LfoView = LfoView;
+
+  /* ---------- 包络视图: ADSR 曲线 + 播放头 ---------- */
+  class EnvView {
+    constructor(canvas, getState) { this.cv = canvas; this.get = getState; }
+    draw(venom) {
+      const cv = this.cv, ctx = cv.getContext('2d'); const dpr = devicePixelRatio > 1 ? 2 : 1; const W = cv.clientWidth * dpr, H = cv.clientHeight * dpr; if (!W) return; if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; }
+      const s = this.get(); const a = s.a, d = s.d, su = s.s, r = s.r; const holdT = Math.max(0.25, Math.min(2, (a + d) * 0.6 + 0.3));
+      const total = a + d + holdT + r; const X = (t) => (t / total) * W; const Y = (v) => H * 0.9 - v * H * 0.75;
+      ctx.fillStyle = venom ? 'rgba(14,13,20,0.9)' : 'rgba(30,26,20,0.9)'; ctx.fillRect(0, 0, W, H);
+      const gold = venom ? '#8cff5a' : '#e8c15a';
+      ctx.fillStyle = venom ? 'rgba(140,255,90,0.12)' : 'rgba(232,193,90,0.14)'; ctx.beginPath(); ctx.moveTo(0, Y(0)); ctx.lineTo(X(a), Y(1)); ctx.lineTo(X(a + d), Y(su)); ctx.lineTo(X(a + d + holdT), Y(su)); ctx.lineTo(X(total), Y(0)); ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = gold; ctx.lineWidth = 1.5 * dpr; ctx.beginPath(); ctx.moveTo(0, Y(0)); ctx.lineTo(X(a), Y(1)); ctx.lineTo(X(a + d), Y(su)); ctx.lineTo(X(a + d + holdT), Y(su)); ctx.lineTo(X(total), Y(0)); ctx.stroke();
+      for (const [t, name] of [[a, 'A'], [a + d, 'D'], [a + d + holdT, 'S'], [total, 'R']]) { ctx.fillStyle = venom ? 'rgba(140,255,90,0.55)' : 'rgba(232,193,90,0.55)'; ctx.font = (9 * dpr) + 'px Menlo, monospace'; ctx.fillText(name, Math.min(X(t), W - 10 * dpr) - 3 * dpr, H - 4 * dpr); }
+      // 播放头: 按下 → A/D/S 段按真实时间; 松开 → R 段
+      if (s.onAt != null) {
+        const now = s.now; let t, v;
+        if (s.gate) { const e = now - s.onAt; t = e < a + d ? e : a + d + Math.min(holdT, e - a - d); v = e < a ? e / a : e < a + d ? 1 - (1 - su) * ((e - a) / d) : su; }
+        else { const e = now - s.offAt; if (e > r) return; t = a + d + holdT + e; v = (s.relFrom == null ? su : s.relFrom) * (1 - e / r); }
+        const px = X(t), py = Y(v); ctx.strokeStyle = venom ? 'rgba(223,255,200,0.7)' : 'rgba(255,246,200,0.7)'; ctx.lineWidth = 1 * dpr; ctx.beginPath(); ctx.moveTo(px, 0); ctx.lineTo(px, H); ctx.stroke();
+        ctx.fillStyle = venom ? '#dfffc8' : '#fff6c8'; ctx.shadowColor = gold; ctx.shadowBlur = 8 * dpr; ctx.beginPath(); ctx.arc(px, py, 3.2 * dpr, 0, Math.PI * 2); ctx.fill(); ctx.shadowBlur = 0;
+      }
+    }
+  }
+  UI.EnvView = EnvView;
+
   /* ---------- 查找面板 (⌘K) ---------- */
   class Palette {
     constructor(container, opts) {

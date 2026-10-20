@@ -66,6 +66,7 @@
       const tLow = this.tiltLow = ctx.createBiquadFilter(); tLow.type = 'lowshelf'; tLow.frequency.value = 260; tLow.gain.value = 0;
       const tHigh = this.tiltHigh = ctx.createBiquadFilter(); tHigh.type = 'highshelf'; tHigh.frequency.value = 3200; tHigh.gain.value = 0;
       this.warmth = 0;
+      const anSynth = this.anSynth = ctx.createAnalyser(); anSynth.fftSize = 4096; anSynth.smoothingTimeConstant = 0; synth.connect(anSynth);
       synth.connect(filter); filter.connect(amp); amp.connect(tLow); tLow.connect(tHigh); tHigh.connect(choIn); choOut.connect(dlyIn); dlyOut.connect(revIn); revOut.connect(comp); comp.connect(master); master.connect(lim); lim.connect(an); an.connect(ctx.destination);
 
       /* 录音抓取 (限幅之后，与你听到的一致) */
