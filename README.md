@@ -1,6 +1,6 @@
 # 石髓 SHISUI · Marble × Venom 弦管合成器
 
-> **Live demo:** <https://syxmadeit.github.io/SHISUI1/> · License: MIT · Status: public beta
+> **Live demo:** <https://shisui-lemon.vercel.app/> (Vercel, 全球边缘) · <https://syxmadeit.github.io/SHISUI1/> (GitHub Pages) · License: MIT · Status: public beta
 
 **English:** SHISUI is a browser synthesizer (Web Audio + AudioWorklet, no build step, no install) built around physically modelled Chinese instruments — guzheng, erhu, dizi, guan/suona and a string ensemble — with an "electrified" signal chain (pickup → diode → tube → cabinet), a Venom mode, and random ports driven by true randomness, the digits of π and a simulated carbon‑14 decay. Marble and gilded-marble UI, Chladni sand visualizer, recording to WAV, eight persistent sound slots, MIDI, bilingual labels. Open the live demo, click **AWAKEN**, play with **Z X C V** or **Q W E R**. Found a bug? Use the **Report** button in the top bar — it prefills a GitHub Issue with logs.
 
@@ -13,7 +13,7 @@
 
 无需构建、无需安装。
 
-- **在线**：<https://syxmadeit.github.io/SHISUI1/>（GitHub Pages），打开后点"唤醒石髓 AWAKEN"。
+- **在线**：<https://shisui-lemon.vercel.app/>（Vercel，全球边缘节点，推 main 自动更新）或 <https://syxmadeit.github.io/SHISUI1/>（GitHub Pages）。打开后点"唤醒石髓 AWAKEN"。两个网址内容一样，哪个快用哪个。
 - **装到手机 / 桌面（PWA）**：用上面的在线网址打开一次 → 安卓 Chrome 点菜单「安装应用」（或页内 `?` 指南里的「装到手机」按钮）；iPhone / iPad 用 Safari 打开 → 底部「分享」→「添加到主屏幕」。之后主屏幕上有图标，全屏运行，**没有网络也能用**（已缓存全部文件，约 2 MB）。有新版本时会在下次打开自动更新。
 - **本地（一键下载）**：<https://github.com/SYXMadeit/SHISUI1/archive/refs/heads/main.zip> → 解压 → 双击 `index.html`（Chrome / Edge / Firefox / Safari 最新版）。页内 `?` 指南里也有同一个下载按钮。
 - 或本地起个静态服务：`python3 -m http.server 8000` 然后打开 `http://localhost:8000/`。
