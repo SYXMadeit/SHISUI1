@@ -56,6 +56,14 @@
 - 作者署名统一用 **SYXMadeIt**（GitHub 用户名 SYXMadeit）（LICENSE、视频片尾、社交主页）。
 - 项目名统一写 **石髓 SHISUI**，英文语境用 SHISUI。
 
+## 5.5 已上线的网址
+
+| 区域 | 网址 | 说明 |
+| --- | --- | --- |
+| 全球（Vercel） | <https://shisui-lemon.vercel.app/> | 项目 `shisui` 连着 GitHub 仓库，推 `main` 自动部署；边缘节点含东京 / 新加坡 / 香港 |
+| 全球（GitHub Pages） | <https://syxmadeit.github.io/SHISUI1/> | 推 `main` 自动部署 |
+| 中国大陆 | （EdgeOne Pages，部署后填入） | 见第 6 节 |
+
 ## 6. 中国大陆怎么发
 
 GitHub Pages（`*.github.io`）在大陆时通时断，手机微信里基本打不开；Vercel / Netlify / Cloudflare Pages 同样不稳。Gitee Pages 已于 2024 年 5 月起停止对普通用户服务。所以：
