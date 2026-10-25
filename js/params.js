@@ -47,7 +47,7 @@
     K('er.pressure', '弓压', 'Bow pressure', 'erhu', 'synth', 0, 1, 0.55, { fmt: pct, tip: '弓毛压力。低=飘、气声；高=粗、嘶哑。', rnd: [0.2, 0.9] }),
     K('er.pos', '弓位', 'Bow position', 'erhu', 'synth', 0.05, 0.45, 0.13, { fmt: pct, tip: '弓与琴码的距离。靠码(小)更亮更尖。', rnd: [0.1, 0.8] }),
     K('er.rosin', '松香噪', 'Rosin noise', 'erhu', 'synth', 0, 1, 0.2, { fmt: pct, tip: '弓毛摩擦的颗粒感。', rnd: [0, 0.6] }),
-    K('er.body', '琴筒共鸣', 'Body resonance', 'erhu', 'synth', 0, 1, 0.6, { fmt: pct, tip: '蟒皮琴筒的鼻音共鸣。', rnd: [0.2, 1] }),
+    K('er.body', '琴筒共鸣', 'Body resonance', 'erhu', 'synth', 0, 1, 0.6, { fmt: pct, tip: '琴筒膜的鼻音共鸣。', rnd: [0.2, 1] }),
     /* ---- 竹笛 ---- */
     K('dz.breath', '气息', 'Breath', 'dizi', 'synth', 0.6, 2, 1.4, { fmt: (v) => v.toFixed(2), tip: '吹气压力。过强会跳到泛音。', rnd: [0.3, 0.8] }),
     K('dz.jet', '风门', 'Jet ratio', 'dizi', 'synth', 0.15, 0.7, 0.32, { fmt: pct, tip: '气流射流长度比：改变泛音/超吹。', rnd: [0.2, 0.7] }),
@@ -111,7 +111,7 @@
     K('comp.amount', '压缩', 'Compress', 'master', 'native', 0, 1, 0.2, { fmt: pct }),
     K('master.vol', '主音量', 'Master', 'master', 'native', 0, 1, 0.8, { fmt: pct, noRnd: true }),
     /* ---- 冷暖 ---- */
-    K('tone.warm', '冷 · 暖', 'Cold · Warm', 'macro', 'native', -1, 1, 0, { bipolar: true, fmt: (v) => (v < -0.02 ? '❄ 寒 ' + Math.round(-v * 100) + '%' : v > 0.02 ? '🔥 暖 ' + Math.round(v * 100) + '%' : '中性 Neutral'), tip: '一个旋钮改变整台机器的体温：往左是肃杀寒风（高频锋利、气声与松香噪增多、颤音快而浅、冰冷的大石厅）；往右是小木屋烤火（低频温厚、电子管偶次谐波与轻饱和、颤音慢而深、近而暗的混响）。', rnd: [0.15, 0.85] }),
+    K('tone.warm', '冷 · 暖', 'Cold · Warm', 'macro', 'native', -1, 1, 0, { bipolar: true, fmt: (v) => (v < -0.02 ? '❄ 寒 ' + Math.round(-v * 100) + '%' : v > 0.02 ? '🔥 暖 ' + Math.round(v * 100) + '%' : '中性 Neutral'), tip: '一个旋钮改变整台机器的体温：往左是凛冽寒风（高频锋利、气声与松香噪增多、颤音快而浅、冰冷的大石厅）；往右是小木屋烤火（低频温厚、电子管偶次谐波与轻饱和、颤音慢而深、近而暗的混响）。', rnd: [0.15, 0.85] }),
     K('tone.pure', '净 · 纯净', 'Purity', 'macro', 'native', 0, 1, 0, { fmt: pct, tip: '一个旋钮让声音回到最干净的状态：逐步退掉拨弦噪、松香噪、气声、拾音器与电子管/二极管染色、箱体、压缩、混响毛边。1 = 原声纯音。毒液不受影响。', rnd: [0, 0.6] }),
     /* ---- 宏 (调制源) ---- */
     K('mac.1', '力 · 驱动', 'Macro 1 Force', 'macro', 'host', 0, 1, 0.3, { fmt: pct, tip: '宏1：默认推动电子管/二极管驱动。' }),

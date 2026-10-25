@@ -1,7 +1,7 @@
 /* 石髓 SHISUI · Service Worker
    整体版本缓存：安装时把全部文件一次装进 "shisui-v<版本>"，运行时只从这一份缓存取，
    不会出现新 index.html 配旧 app.js 的混版本。发新版 = 改版本号 → 新 SW 装好新缓存后接管，下次打开生效。 */
-const VERSION = '0.8.2';
+const VERSION = '0.8.3';
 const CACHE = 'shisui-v' + VERSION;
 const ASSETS = ['./', './index.html', './css/style.css', './manifest.webmanifest',
   './js/marble.js', './js/dsp.worklet.js', './js/params.js', './js/random.js', './js/presets.js', './js/engine.js', './js/ui.js', './js/views.js', './js/guide.js', './js/code.js', './js/app.js',
