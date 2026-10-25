@@ -812,6 +812,6 @@
     setInterval(() => { if (sched && arpChip) arpChip.textContent = real('arp.mode') === 'off' ? '' : '琶音中 Arp · 按住琴键 hold keys · ' + sched.held.length; }, 500);
   }
   $('#enter').addEventListener('click', boot);
-  root.SHISUI.VERSION = '0.8.2';
+  root.SHISUI.VERSION = '0.8.3';
   root.SHISUI.app = { state, engine, bus, setParam, loadPreset, surprise, diag, buildReport, setDecayPaused, stopRandom, setPlain, get sched() { return sched; } };
 })(window);
