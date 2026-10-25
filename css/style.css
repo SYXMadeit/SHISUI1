@@ -673,3 +673,38 @@ body.lite .light-burst { display: none !important; }
 body.lite .veins-glow { animation: none !important; }
 
 @media (max-width: 760px) { body.guide-on .guide { min-height: 96px; align-content: flex-start; } }
+
+/* ---------- 顶栏「更多」与键盘收起 (桌面默认全显示) ---------- */
+.tb-more { display: contents; }
+.tb-more-btn { display: none; }
+.kb-handle { display: none; }
+.p-dice { margin-left: auto; min-height: 26px !important; padding: 2px 9px !important; font-size: 12px !important; border-radius: 999px !important; }
+.panel-title { align-items: center; }
+.pi .fav { margin-left: auto; background: transparent; border: 0; cursor: pointer; font-size: 14px; opacity: 0.35; }
+.pi .fav.on { opacity: 1; }
+.g-chip b { font-weight: 400; font-family: var(--font-pixel); font-size: 9px; color: var(--gold-3); margin-left: 4px; }
+body.venom .g-chip b { color: var(--gold-2); }
+
+/* ---------- 手机布局: 顶栏一行 + 「⋯」展开, 底栏一行指路 + 短键盘 + 可收起 ---------- */
+@media (max-width: 760px) {
+  .topbar { padding: 6px 10px; gap: 6px; row-gap: 6px; }
+  .logo .l1 { font-size: 24px; letter-spacing: 0.05em; } .logo .l2 { display: none; }
+  .preset-name { min-width: 0; width: 34vw; height: 40px; padding: 4px 8px; font-size: 12px; } .preset-name small { display: none; }
+  .mode-tabs { height: 36px; } .mode-tab { font-size: 15px; padding: 2px 8px; }
+  #btn-search { display: none; }
+  .tb-more-btn { display: inline-flex; margin-left: auto; }
+  .tb-more { display: none; flex-basis: 100%; flex-wrap: wrap; gap: 6px; align-items: center; padding-top: 4px; }
+  .topbar.open .tb-more { display: flex; }
+  .tb-more .tb-break { display: none; }
+  .keys-wrap { padding: 4px 8px 6px; }
+  .kb-handle { display: flex; justify-content: center; margin: -2px 0 2px; } .kb-handle .btn { min-height: 24px !important; padding: 1px 12px !important; font-size: 11px !important; }
+  .kb-show { display: none; } body.kb-collapsed .kb-hide { display: none; } body.kb-collapsed .kb-show { display: inline; }
+  body.kb-collapsed .keys-top, body.kb-collapsed .guide, body.kb-collapsed #keyboard { display: none !important; }
+  .kbd-hint, #info-bar { display: none; }
+  .keys-top { margin-bottom: 4px; gap: 6px; } .keys-top .btn { min-height: 28px !important; padding: 2px 8px !important; font-size: 11px !important; }
+  .guide { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; min-height: 34px !important; margin: 0 0 4px; gap: 6px; padding-bottom: 2px; scrollbar-width: none; }
+  .guide::-webkit-scrollbar { display: none; }
+  .guide .toggle { min-height: 28px; flex: none; } .g-key, .g-chord, .g-sec, .g-prog { flex: none; white-space: nowrap; } .g-prog { display: none; }
+  #keyboard { height: 84px; }
+  .key-name { font-size: 8px; }
+}

@@ -157,6 +157,8 @@
       <button class="mode-tab on" data-mode="shape"><span class="zh">塑</span><span class="en">Shape</span></button>
       <button class="mode-tab" data-mode="deep"><span class="zh">深</span><span class="en">Deep</span></button>
     </div>
+    <button class="btn sm tb-more-btn" id="tb-toggle" title="更多 · More">⋯</button>
+    <div class="tb-more">
     <button class="btn gold" id="btn-surprise" title="用当前随机源随机化未锁定的参数（右键旋钮可锁定）">🎲 <span class="zh">惊喜</span> <span class="en">Surprise</span></button>
     <button class="btn sm" id="btn-undo" title="撤销 Undo (Ctrl/⌘+Z)">↶</button>
     <button class="btn sm" id="btn-redo" title="重做 Redo (Ctrl/⌘+Shift+Z)">↷</button>
@@ -175,11 +177,13 @@
       <button class="btn sm" id="btn-help" title="帮助 Help">?</button>
       <button class="btn sm danger" id="btn-panic" title="全部静音 Panic · all notes off (Esc ×2)">✕</button>
     </div>
+    </div>
   </header>
 
   <main id="panels"></main>
 
   <footer class="keys-wrap">
+    <div class="kb-handle"><button class="btn sm" id="kb-collapse" title="收起 / 展开 键盘与指路，让中间的面板有地方操作 · Hide / show keys"><span class="kb-hide">⌄ <span class="zh">收起键盘</span> <span class="en">Hide keys</span></span><span class="kb-show">⌃ <span class="zh">键盘</span> <span class="en">Keys</span></span></button></div>
     <div class="keys-top">
       <button class="btn sm" id="oct-down" title="降八度 Octave down ( , )"><span class="zh">八度</span> <span class="en">Oct</span> −</button>
       <span id="oct-label" class="small">C3</span>
@@ -189,6 +193,7 @@
     </div>
     <div id="guide" class="guide">
       <button class="toggle" id="guide-toggle" title="指路：从你弹的音推测调式，点亮推荐的下一个音，给出配套和弦与走向。给玩音乐的人一个开关。 · Guide: key detection, next-note and chord suggestions"><span class="tg-led"></span><span class="tg-label">指路 <span class="en">Guide</span></span></button>
+      <button class="toggle" id="harm-toggle" title="一键和声：每弹一个音自动配一个和弦，按走向权重预测下一个和弦并平滑衔接（单音连奏时不生效） · One-key harmony: each note gets a chord predicted from the progression"><span class="tg-led"></span><span class="tg-label">和声 <span class="en">Harmony</span></span></button>
       <span class="g-key" id="g-key"></span>
       <span class="g-chord" id="g-chord"></span>
       <span class="g-sec" id="g-notes"></span>

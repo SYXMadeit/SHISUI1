@@ -154,7 +154,7 @@
       const noteAt = (e) => { const t = document.elementFromPoint(e.clientX, e.clientY); return t && t.dataset && t.dataset.note ? +t.dataset.note : null; };
       const velAt = (e, k) => { const r = k.getBoundingClientRect(); return Math.min(1, Math.max(0.15, (e.clientY - r.top) / r.height * 0.9 + 0.2)); };
       this.c.addEventListener('pointerdown', (e) => { const n = noteAt(e); if (n == null) return; e.preventDefault(); this.c.setPointerCapture(e.pointerId); const v = velAt(e, this.keys.get(n)); this.pointerNote.set(e.pointerId, n); this.press(n, v, 'mouse'); });
-      this.c.addEventListener('pointermove', (e) => { if (!this.pointerNote.has(e.pointerId)) return; const n = noteAt(e); const prev = this.pointerNote.get(e.pointerId); if (n != null && n !== prev) { this.release(prev, 'mouse'); this.pointerNote.set(e.pointerId, n); this.press(n, velAt(e, this.keys.get(n)), 'mouse'); } });
+      this.c.addEventListener('pointermove', (e) => { if (!this.pointerNote.has(e.pointerId)) return; const n = noteAt(e); const prev = this.pointerNote.get(e.pointerId); if (n != null && n !== prev) { this.release(prev, 'mouse'); this.pointerNote.set(e.pointerId, n); this.press(n, velAt(e, this.keys.get(n)), 'mouse'); } else if (n != null && this.opts.onSlide) { const r = this.keys.get(n).getBoundingClientRect(); this.opts.onSlide(n, Math.min(1, Math.max(0, (e.clientY - r.top) / r.height))); } });
       const up = (e) => { if (!this.pointerNote.has(e.pointerId)) return; this.release(this.pointerNote.get(e.pointerId), 'mouse'); this.pointerNote.delete(e.pointerId); };
       this.c.addEventListener('pointerup', up); this.c.addEventListener('pointercancel', up);
     }
