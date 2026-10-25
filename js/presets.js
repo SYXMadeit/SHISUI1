@@ -5,6 +5,7 @@
 (function (root) {
   'use strict';
   const DEFAULT_MODS = [
+    ['WHEEL', 'vib.depth', 0.55], ['WHEEL', 'gz.bright', 0.2], // 琴键上滑动 (或 MIDI 调制轮) → 揉弦加深、音色略亮
     ['M1', 'tube.drive', 0.6], ['M1', 'dio.mix', 0.5], ['M1', 'el.drive', 0.4],
     ['M2', 'flt.cutoff', 0.45], ['M2', 'gz.bright', 0.35], ['M2', 'dz.membrane', 0.3],
     ['M3', 'rev.mix', 0.55], ['M3', 'dly.mix', 0.35], ['M3', 'rev.size', 0.3],

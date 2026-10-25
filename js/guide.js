@@ -23,6 +23,7 @@
   /* 走向标签按目标和弦的功能: 主 → 回家, 属 → 拉紧, 下属 → 铺垫, 其余 → 绕开 */
   const ROLE_DEG = { 0: '回家', 4: '拉紧', 6: '拉紧', 3: '铺垫', 1: '铺垫', 5: '绕开', 2: '绕开' };
   const ROLE_PENTA = { 0: '回家', 3: '拉紧', 2: '铺垫', 1: '绕开' };
+  const PROB = [0.45, 0.3, 0.17, 0.08]; // 走向表的权重: 第一候选最可能
 
   const corr = (a, b) => { let ma = 0, mb = 0; for (let i = 0; i < 12; i++) { ma += a[i]; mb += b[i]; } ma /= 12; mb /= 12; let n = 0, da = 0, db = 0; for (let i = 0; i < 12; i++) { n += (a[i] - ma) * (b[i] - mb); da += (a[i] - ma) ** 2; db += (b[i] - mb) ** 2; } return da && db ? n / Math.sqrt(da * db) : 0; };
   const rot = (prof, r) => { const o = new Array(12); for (let i = 0; i < 12; i++) o[(i + r) % 12] = prof[i]; return o; };
@@ -98,13 +99,35 @@
       if (!key) return []; const base = 48 + key.root; const out = [];
       if (key.mode === 'penta') {
         const cur = chord && chord.deg >= 0 ? PENTA_CHORDS.findIndex((c) => c.deg === chord.deg) : -1; const order = cur >= 0 ? NEXT_PENTA[cur] : [0, 1, 3];
-        order.forEach((i, j) => { const c = PENTA_CHORDS[i]; out.push({ zh: c.zh, roman: c.zh, name: NAMES[(key.root + c.iv[0]) % 12] + (i === 1 ? 'm' : i === 2 ? 'sus2' : i === 3 ? 'sus4' : ''), notes: c.iv.map((x) => base + x), role: cur < 0 ? '' : (ROLE_PENTA[i] || '') }); });
+        order.forEach((i, j) => { const c = PENTA_CHORDS[i]; out.push({ zh: c.zh, roman: c.zh, name: NAMES[(key.root + c.iv[0]) % 12] + (i === 1 ? 'm' : i === 2 ? 'sus2' : i === 3 ? 'sus4' : ''), notes: c.iv.map((x) => base + x), role: cur < 0 ? '' : (ROLE_PENTA[i] || ''), p: PROB[Math.min(j, 3)] }); });
         return out;
       }
       const roman = key.mode === 'minor' ? ROMAN_MIN : ROMAN_MAJ, table = key.mode === 'minor' ? NEXT_MIN : NEXT_MAJ, sc = SCALE[key.mode];
       const cur = chord && chord.deg >= 0 ? chord.deg : -1; const order = cur >= 0 ? table[cur] : (key.mode === 'minor' ? [0, 5, 3] : [0, 3, 4]);
-      order.slice(0, 3).forEach((deg, j) => { let q = QUAL[key.mode][deg]; if (key.mode === 'minor' && deg === 4) q = 'maj'; const r = sc[deg]; out.push({ zh: roman[deg], roman: roman[deg], name: NAMES[(key.root + r) % 12] + (q === 'min' ? 'm' : q === 'dim' ? '°' : ''), notes: TRI[q].map((x) => base + r + x), role: cur < 0 ? '' : (ROLE_DEG[deg] || '') }); });
+      order.slice(0, 3).forEach((deg, j) => { let q = QUAL[key.mode][deg]; if (key.mode === 'minor' && deg === 4) q = 'maj'; const r = sc[deg]; out.push({ zh: roman[deg], roman: roman[deg], name: NAMES[(key.root + r) % 12] + (q === 'min' ? 'm' : q === 'dim' ? '°' : ''), notes: TRI[q].map((x) => base + r + x), role: cur < 0 ? '' : (ROLE_DEG[deg] || ''), p: PROB[Math.min(j, 3)] }); });
       return out;
+    }
+    /* ---- 一键和声: 给旋律音配一个和弦。候选 = 含这个音的调内和弦; 权重 = 走向表概率 × 旋律音在和弦里的角色 × 乐句位置; 声部放旋律下方一个八度内 + 低八度根音 ---- */
+    harmonize(note) {
+      const key = this.key || this.detectKey() || { root: note % 12, mode: 'penta', penta: 'gong', score: 0 }; const mpc = note % 12; const prev = this.chord; const cands = [];
+      const phraseEnd = this.chordHist.length % 4 === 3;
+      if (key.mode === 'penta') {
+        const curI = prev && prev.deg >= 0 ? PENTA_CHORDS.findIndex((c) => c.deg === prev.deg) : -1; const order = curI >= 0 ? NEXT_PENTA[curI] : [0, 1, 3, 2];
+        PENTA_CHORDS.forEach((c, i) => { const pcs = c.iv.map((x) => (x + key.root) % 12); const role = pcs.indexOf(mpc); if (role < 0) return; const rank = order.indexOf(i); let w = rank < 0 ? 0.06 : PROB[Math.min(rank, 3)]; if (curI === i) w *= 0.7; w *= role === 0 ? 1 : role === 1 ? 1.1 : 0.9; if (phraseEnd && i === 0) w *= 1.3;
+          cands.push({ w, root: pcs[0], q: i === 1 ? 'min' : i === 2 ? 'sus2' : i === 3 ? 'sus4' : 'maj', deg: c.deg, roman: c.zh, name: NAMES[pcs[0]] + (i === 1 ? 'm' : i === 2 ? 'sus2' : i === 3 ? 'sus4' : ''), pcs }); });
+      } else {
+        const sc = SCALE[key.mode], roman = key.mode === 'minor' ? ROMAN_MIN : ROMAN_MAJ, table = key.mode === 'minor' ? NEXT_MIN : NEXT_MAJ;
+        const cur = prev && prev.deg >= 0 ? prev.deg : -1; const order = cur >= 0 ? table[cur] : (key.mode === 'minor' ? [0, 5, 3, 6] : [0, 3, 4, 5]);
+        for (let deg = 0; deg < 7; deg++) { let q = QUAL[key.mode][deg]; if (key.mode === 'minor' && deg === 4) q = 'maj'; const r = sc[deg]; const pcs = TRI[q].map((x) => (r + x + key.root) % 12); const role = pcs.indexOf(mpc); if (role < 0) continue;
+          const rank = order.indexOf(deg); let w = rank < 0 ? 0.06 : PROB[Math.min(rank, 3)]; if (cur === deg) w *= 0.75; if (deg === 6) w *= 0.6; w *= role === 0 ? 1 : role === 1 ? 1.12 : 0.92; if (phraseEnd && (deg === 0 || deg === 4)) w *= 1.3;
+          cands.push({ w, root: pcs[0], q, deg, roman: roman[deg], name: NAMES[pcs[0]] + (q === 'min' ? 'm' : q === 'dim' ? '°' : ''), pcs }); }
+      }
+      if (!cands.length) return null; cands.sort((a, b) => b.w - a.w); const best = cands[0];
+      const notes = []; for (const p of best.pcs) { if (p === mpc) continue; let n = note - 1; while (((n % 12) + 12) % 12 !== p) n--; if (n > note - 13) notes.push(n); }
+      let bass = note - 13; while (((bass % 12) + 12) % 12 !== best.root) bass--; if (bass >= 28) notes.push(bass);
+      const chord = { root: best.root, q: best.q, deg: best.deg, name: best.name, roman: best.roman, key: this.keyName(key) };
+      this.chord = chord; this.pushChord(chord); this.dirty = true; const tot = cands.reduce((a, c) => a + c.w, 0);
+      return { chord, notes, p: best.w / tot, alts: cands.slice(1, 3).map((c) => ({ roman: c.roman, name: c.name, p: c.w / tot })) };
     }
     /* ---- 一轮走向: 记录和弦历史, 四个一轮 ---- */
     pushChord(c) { const last = this.chordHist[this.chordHist.length - 1]; if (!last || last.root !== c.root || last.q !== c.q) { this.chordHist.push(c); if (this.chordHist.length > 8) this.chordHist.shift(); } }
